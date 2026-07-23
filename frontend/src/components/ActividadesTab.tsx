@@ -1,4 +1,6 @@
 import type { Actividad } from '../types';
+import { usePlan } from '../contexts/PlanContext';
+import EditableBlock from './EditableBlock';
 
 const DAY_ORDER: Actividad['dia'][] = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
 
@@ -20,9 +22,12 @@ const DAY_LABELS: Record<Actividad['dia'], string> = {
 
 interface ActividadesTabProps {
   actividades: Actividad[];
+  planificacionId?: string;
 }
 
-export default function ActividadesTab({ actividades }: ActividadesTabProps) {
+export default function ActividadesTab({ actividades, planificacionId }: ActividadesTabProps) {
+  const { updateField, addActividad } = usePlan();
+
   if (actividades.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -48,8 +53,12 @@ export default function ActividadesTab({ actividades }: ActividadesTabProps) {
         <DayCard
           key={group.dia}
           dia={group.label}
+          diaKey={group.dia}
           color={group.color}
           actividades={group.actividades}
+          planificacionId={planificacionId}
+          onUpdateField={updateField}
+          onAddActividad={addActividad}
         />
       ))}
     </div>
@@ -58,11 +67,15 @@ export default function ActividadesTab({ actividades }: ActividadesTabProps) {
 
 interface DayCardProps {
   dia: string;
+  diaKey: string;
   color: string;
   actividades: Actividad[];
+  planificacionId?: string;
+  onUpdateField: (path: string, value: string) => Promise<void>;
+  onAddActividad: (dia: string) => void;
 }
 
-function DayCard({ dia, color, actividades }: DayCardProps) {
+function DayCard({ dia, diaKey, color, actividades, planificacionId, onUpdateField, onAddActividad }: DayCardProps) {
   return (
     <article
       className="bg-white rounded-xl shadow-sm border border-border-light p-4"
@@ -76,15 +89,53 @@ function DayCard({ dia, color, actividades }: DayCardProps) {
       <div className="space-y-2">
         {actividades.map((actividad) => (
           <div key={actividad.id}>
-            <p className="text-sm font-semibold font-quicksand text-text-dark">
-              {actividad.titulo}
-            </p>
-            <p className="text-sm font-quicksand text-text-muted mt-0.5">
-              {actividad.descripcion}
-            </p>
+            {planificacionId ? (
+              <>
+                <EditableBlock
+                  content={actividad.titulo}
+                  maxLength={500}
+                  onSave={(newValue) => onUpdateField(`actividades.${actividad.id}.titulo`, newValue)}
+                  type="title"
+                  fieldPath={`actividades.${actividad.id}.titulo`}
+                  planificacionId={planificacionId}
+                  className="text-sm font-quicksand text-text-dark"
+                  as="p"
+                />
+                <EditableBlock
+                  content={actividad.descripcion}
+                  maxLength={2000}
+                  onSave={(newValue) => onUpdateField(`actividades.${actividad.id}.descripcion`, newValue)}
+                  type="description"
+                  fieldPath={`actividades.${actividad.id}.descripcion`}
+                  planificacionId={planificacionId}
+                  className="text-sm font-quicksand text-text-muted mt-0.5"
+                  as="p"
+                />
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold font-quicksand text-text-dark">
+                  {actividad.titulo}
+                </p>
+                <p className="text-sm font-quicksand text-text-muted mt-0.5">
+                  {actividad.descripcion}
+                </p>
+              </>
+            )}
           </div>
         ))}
       </div>
+
+      {/* Agregar actividad button */}
+      {planificacionId && (
+        <button
+          onClick={() => onAddActividad(diaKey)}
+          className="mt-3 w-full border-2 border-dashed border-green-primary/40 text-green-primary rounded-full px-6 py-3 min-h-[56px] font-quicksand text-sm font-medium hover:bg-green-primary/5 active:scale-95 transition-all"
+          aria-label={`Agregar actividad para ${dia}`}
+        >
+          + Agregar actividad
+        </button>
+      )}
     </article>
   );
 }

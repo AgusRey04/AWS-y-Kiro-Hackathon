@@ -38,25 +38,25 @@ const mockPlanificacion = {
 
 describe('PreviewPage', () => {
   it('muestra estado de carga', () => {
-    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: true, error: null });
+    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: true, error: null, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('Cargando planificación...')).toBeInTheDocument();
   });
 
   it('muestra estado de error', () => {
-    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: 'Algo salió mal' });
+    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: 'Algo salió mal', updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('Algo salió mal')).toBeInTheDocument();
   });
 
   it('muestra mensaje cuando no hay planificación', () => {
-    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: null });
+    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: null, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('No hay planificación disponible.')).toBeInTheDocument();
   });
 
   it('muestra el header con datos de la planificación', () => {
-    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null });
+    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();
     expect(screen.getByText('PLANIFICACIÓN SEMANAL · NIVEL INICIAL')).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe('PreviewPage', () => {
   });
 
   it('muestra las 4 pestañas con Actividades como activa por defecto', () => {
-    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null });
+    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
 
     const actividadesTab = screen.getByRole('tab', { name: 'Actividades' });
@@ -77,7 +77,7 @@ describe('PreviewPage', () => {
   });
 
   it('cambia de pestaña al hacer click', () => {
-    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null });
+    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Materiales' }));
@@ -93,7 +93,7 @@ describe('PreviewPage', () => {
       adaptaciones: [],
       fundamentacion: '',
     };
-    mockUsePlan.mockReturnValue({ planificacion: emptyPlan, isLoading: false, error: null });
+    mockUsePlan.mockReturnValue({ planificacion: emptyPlan, isLoading: false, error: null, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
 
     expect(screen.getByText('No hay actividades disponibles para esta planificación.')).toBeInTheDocument();

@@ -1,7 +1,21 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import MaterialesTab from './MaterialesTab';
 import type { Material } from '../types';
+
+// Mock PlanContext
+vi.mock('../contexts/PlanContext', () => ({
+  usePlan: () => ({
+    planificacion: null,
+    isLoading: false,
+    error: null,
+    crear: vi.fn(),
+    updateField: vi.fn().mockResolvedValue(undefined),
+    addActividad: vi.fn(),
+    addMaterial: vi.fn(),
+    addAdaptacion: vi.fn(),
+  }),
+}));
 
 const mockMateriales: Material[] = [
   { id: '1', nombre: 'Hojas secas', icono: '🍂', orden: 1 },
@@ -39,5 +53,10 @@ describe('MaterialesTab', () => {
   it('tiene role list para accesibilidad', () => {
     render(<MaterialesTab materiales={mockMateriales} />);
     expect(screen.getByRole('list')).toBeInTheDocument();
+  });
+
+  it('muestra botón Agregar item personalizado cuando hay planificacionId', () => {
+    render(<MaterialesTab materiales={mockMateriales} planificacionId="plan-1" />);
+    expect(screen.getByText('+ Agregar item personalizado')).toBeInTheDocument();
   });
 });

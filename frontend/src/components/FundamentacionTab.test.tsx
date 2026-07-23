@@ -1,6 +1,20 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import FundamentacionTab from './FundamentacionTab';
+
+// Mock PlanContext
+vi.mock('../contexts/PlanContext', () => ({
+  usePlan: () => ({
+    planificacion: null,
+    isLoading: false,
+    error: null,
+    crear: vi.fn(),
+    updateField: vi.fn().mockResolvedValue(undefined),
+    addActividad: vi.fn(),
+    addMaterial: vi.fn(),
+    addAdaptacion: vi.fn(),
+  }),
+}));
 
 describe('FundamentacionTab', () => {
   it('muestra empty state cuando no hay fundamentación', () => {
@@ -24,7 +38,7 @@ describe('FundamentacionTab', () => {
     expect(screen.getByLabelText('Fundamentación pedagógica')).toBeInTheDocument();
   });
 
-  it('preserva saltos de línea en el texto', () => {
+  it('preserva saltos de línea en el texto cuando no está en modo edición', () => {
     const texto = 'Primera línea\nSegunda línea';
     render(<FundamentacionTab fundamentacion={texto} />);
     const container = screen.getByText(/Primera línea/);

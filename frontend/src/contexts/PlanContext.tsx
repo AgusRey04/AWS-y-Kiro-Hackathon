@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Planificacion, ApiErrorResponse, ApiSuccessResponse } from '../types';
+import type { Planificacion, Actividad, Material, Adaptacion, ApiErrorResponse } from '../types';
 
 // --- Context Value ---
 
@@ -78,20 +78,104 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     }
   }, [navigate]);
 
-  const updateField = useCallback(async (_path: string, _value: string) => {
-    // Will be implemented in a future task
-  }, []);
+  const updateField = useCallback(async (path: string, value: string) => {
+    if (!planificacion) return;
 
-  const addActividad = useCallback((_dia: string) => {
-    // Will be implemented in a future task
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    const res = await fetch(`/api/planificaciones/${planificacion.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ path, value }),
+    });
+
+    if (!res.ok) {
+      const errorJson = await res.json();
+      throw new Error(errorJson.message || 'Error al guardar el cambio.');
+    }
+
+    // Update local state optimistically
+    const segments = path.split('.');
+    setPlanificacion((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev };
+
+      if (segments.length === 1) {
+        // Direct field: "fundamentacion", "titulo"
+        (updated as Record<string, unknown>)[segments[0]] = value;
+      } else if (segments.length === 3) {
+        const [table, itemId, field] = segments;
+        if (table === 'actividades') {
+          updated.actividades = updated.actividades.map((a) =>
+            a.id === itemId ? { ...a, [field]: value } : a
+          );
+        } else if (table === 'materiales') {
+          updated.materiales = updated.materiales.map((m) =>
+            m.id === itemId ? { ...m, [field]: value } : m
+          );
+        } else if (table === 'adaptaciones') {
+          updated.adaptaciones = updated.adaptaciones.map((a) =>
+            a.id === itemId ? { ...a, [field]: value } : a
+          );
+        }
+      }
+
+      return updated;
+    });
+  }, [planificacion]);
+
+  const addActividad = useCallback((dia: string) => {
+    setPlanificacion((prev) => {
+      if (!prev) return prev;
+      const existingForDay = prev.actividades.filter((a) => a.dia === dia);
+      const newActividad: Actividad = {
+        id: crypto.randomUUID(),
+        dia: dia as Actividad['dia'],
+        titulo: '',
+        descripcion: '',
+        orden: existingForDay.length + 1,
+      };
+      return {
+        ...prev,
+        actividades: [...prev.actividades, newActividad],
+      };
+    });
   }, []);
 
   const addMaterial = useCallback(() => {
-    // Will be implemented in a future task
+    setPlanificacion((prev) => {
+      if (!prev) return prev;
+      const newMaterial: Material = {
+        id: crypto.randomUUID(),
+        nombre: '',
+        icono: '📦',
+        orden: prev.materiales.length + 1,
+      };
+      return {
+        ...prev,
+        materiales: [...prev.materiales, newMaterial],
+      };
+    });
   }, []);
 
   const addAdaptacion = useCallback(() => {
-    // Will be implemented in a future task
+    setPlanificacion((prev) => {
+      if (!prev) return prev;
+      const newAdaptacion: Adaptacion = {
+        id: crypto.randomUUID(),
+        categoria: 'General',
+        titulo: '',
+        descripcion: '',
+        orden: prev.adaptaciones.length + 1,
+      };
+      return {
+        ...prev,
+        adaptaciones: [...prev.adaptaciones, newAdaptacion],
+      };
+    });
   }, []);
 
   return (

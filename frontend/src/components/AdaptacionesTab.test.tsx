@@ -1,7 +1,21 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import AdaptacionesTab from './AdaptacionesTab';
 import type { Adaptacion } from '../types';
+
+// Mock PlanContext
+vi.mock('../contexts/PlanContext', () => ({
+  usePlan: () => ({
+    planificacion: null,
+    isLoading: false,
+    error: null,
+    crear: vi.fn(),
+    updateField: vi.fn().mockResolvedValue(undefined),
+    addActividad: vi.fn(),
+    addMaterial: vi.fn(),
+    addAdaptacion: vi.fn(),
+  }),
+}));
 
 const mockAdaptaciones: Adaptacion[] = [
   { id: '1', categoria: 'Visual', titulo: 'Material sensorial', descripcion: 'Usar texturas variadas', orden: 1 },
