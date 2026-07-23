@@ -78,7 +78,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Implement Home screen with voice and text input
-  - [ ] 5.1 Implement ConsignaInput component and suggestion chips
+  - [x] 5.1 Implement ConsignaInput component and suggestion chips
     - Create text input with placeholder "¿Qué querés trabajar esta semana?" and min-height 56px
     - Enforce 500 character max limit
     - Show remaining character counter when text exceeds 400 characters
