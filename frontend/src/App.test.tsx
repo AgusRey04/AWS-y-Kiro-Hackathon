@@ -61,6 +61,7 @@ describe('LandingPage', () => {
     expect(main).toHaveClass('min-h-screen');
     expect(main).toHaveClass('flex');
     expect(main).toHaveClass('flex-col');
+    expect(main).toHaveClass('overflow-x-hidden');
   });
 
   it('renders mockup image area with accessible label', () => {
