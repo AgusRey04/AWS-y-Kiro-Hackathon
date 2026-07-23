@@ -77,7 +77,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
 - [x] 4. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement Home screen with voice and text input
+- [x] 5. Implement Home screen with voice and text input
   - [x] 5.1 Implement ConsignaInput component and suggestion chips
     - Create text input with placeholder "¿Qué querés trabajar esta semana?" and min-height 56px
     - Enforce 500 character max limit
@@ -109,7 +109,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 1: Voice transcript truncation at character limit**
     - **Validates: Requirements 1.8**
 
-  - [ ] 5.5 Implement HomeScreen with toggle, greeting, banner and CREAR button
+  - [x] 5.5 Implement HomeScreen with toggle, greeting, banner and CREAR button
     - Create VoiceTextToggle (pill shape) with "Voz" and "Texto" options, "Texto" selected by default
     - Show personalized greeting with user's name
     - Show ephemeris banner when an ephemeris is within 7 days
