@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen flex flex-col bg-bg-cream">
+    <main className="min-h-screen flex flex-col bg-bg-cream overflow-x-hidden">
       {/* Hero Section */}
-      <section className="flex-1 flex flex-col items-center justify-center px-4 py-12 text-center">
+      <section className="flex-1 flex flex-col items-center justify-center px-4 py-12 text-center max-w-full">
         <h1 className="text-3xl md:text-4xl font-bold text-green-primary mb-4">
           Planifica con amor, enseña con libertad
         </h1>
@@ -22,29 +22,29 @@ export default function LandingPage() {
         </div>
 
         {/* Benefits */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 max-w-lg">
-          <div className="bg-white rounded-lg p-4 border border-border-light">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 max-w-lg w-full">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-border-light">
             <p className="font-semibold text-text-dark">Fundamentación Propia</p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-border-light">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-border-light">
             <p className="font-semibold text-text-dark">Actividades Editables</p>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-border-light">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-border-light">
             <p className="font-semibold text-text-dark">Inclusión a medida</p>
           </div>
         </div>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link
             to="/register"
-            className="bg-green-primary text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-dark transition-colors"
+            className="bg-mostaza text-white font-bold px-6 py-3 min-h-[56px] rounded-full active:scale-95 transition-all flex items-center justify-center hover:opacity-90"
           >
             Empezar Gratis
           </Link>
           <Link
             to="/login"
-            className="border border-green-primary text-green-primary font-semibold px-6 py-3 rounded-lg hover:bg-green-primary hover:text-white transition-colors"
+            className="border-2 border-green-primary text-green-primary font-bold px-6 py-3 min-h-[56px] rounded-full active:scale-95 transition-all flex items-center justify-center hover:bg-green-primary hover:text-white"
           >
             Iniciar Sesión
           </Link>
