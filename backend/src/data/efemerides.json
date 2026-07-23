@@ -1,0 +1,232 @@
+{
+  "efemerides": [
+    {
+      "fecha": "01-06",
+      "nombre": "Día de los Reyes Magos",
+      "descripcion": "Celebración tradicional donde los niños reciben regalos. Se destaca la solidaridad y la imaginación.",
+      "sugerenciaConsigna": "Planificá una semana sobre la tradición de Reyes Magos: elaborar coronas, escribir cartas y trabajar valores de generosidad en sala."
+    },
+    {
+      "fecha": "02-27",
+      "nombre": "Día del Carnaval (fecha aproximada)",
+      "descripcion": "Fiesta popular con murgas, disfraces y expresión artística libre.",
+      "sugerenciaConsigna": "Planificá una semana de carnaval con confección de máscaras, murga infantil y exploración de ritmos con instrumentos caseros."
+    },
+    {
+      "fecha": "03-08",
+      "nombre": "Día Internacional de la Mujer",
+      "descripcion": "Jornada de reflexión sobre los derechos de las mujeres y la igualdad de género.",
+      "sugerenciaConsigna": "Planificá actividades sobre mujeres que admiramos: cuentos con protagonistas femeninas y dibujos de mujeres de la familia."
+    },
+    {
+      "fecha": "03-21",
+      "nombre": "Día del Agua",
+      "descripcion": "Concientización sobre el cuidado del agua como recurso vital.",
+      "sugerenciaConsigna": "Planificá una semana sobre el cuidado del agua: experimentos con agua, circuitos de higiene y cuentos sobre ríos y lluvia."
+    },
+    {
+      "fecha": "03-24",
+      "nombre": "Día Nacional de la Memoria por la Verdad y la Justicia",
+      "descripcion": "Conmemoración del golpe de Estado de 1976. Se trabajan valores de memoria, verdad, justicia y democracia.",
+      "sugerenciaConsigna": "Planificá actividades sobre memoria e identidad: el derecho al nombre, árboles genealógicos y cuentos sobre derechos de los niños."
+    },
+    {
+      "fecha": "04-02",
+      "nombre": "Día del Veterano y de los Caídos en la Guerra de Malvinas",
+      "descripcion": "Homenaje a los veteranos y caídos en la Guerra de Malvinas de 1982.",
+      "sugerenciaConsigna": "Planificá una semana sobre las Islas Malvinas: ubicación en el mapa, animales de las islas y homenaje a los héroes con manualidades."
+    },
+    {
+      "fecha": "04-19",
+      "nombre": "Día del Aborigen Americano",
+      "descripcion": "Reconocimiento de los pueblos originarios de América, su cultura y derechos.",
+      "sugerenciaConsigna": "Planificá actividades sobre pueblos originarios: leyendas, artesanías con materiales naturales y juegos ancestrales."
+    },
+    {
+      "fecha": "04-22",
+      "nombre": "Día de la Tierra",
+      "descripcion": "Concientización ambiental y cuidado del planeta.",
+      "sugerenciaConsigna": "Planificá una semana sobre el cuidado del planeta: huerta escolar, reciclado creativo y observación de la naturaleza."
+    },
+    {
+      "fecha": "04-23",
+      "nombre": "Día del Libro",
+      "descripcion": "Celebración de la lectura y los libros como herramientas de conocimiento y placer.",
+      "sugerenciaConsigna": "Planificá una semana literaria: rincón de lectura, creación de cuentos colectivos y visita a la biblioteca."
+    },
+    {
+      "fecha": "04-29",
+      "nombre": "Día del Animal",
+      "descripcion": "Concientización sobre el respeto y cuidado de los animales.",
+      "sugerenciaConsigna": "Planificá actividades sobre el cuidado animal: clasificación de animales, visita de mascotas al jardín y cuentos sobre responsabilidad."
+    },
+    {
+      "fecha": "05-01",
+      "nombre": "Día del Trabajador",
+      "descripcion": "Reconocimiento al trabajo y los derechos laborales.",
+      "sugerenciaConsigna": "Planificá una semana sobre los oficios y profesiones: juego dramático, entrevistas a familias sobre sus trabajos."
+    },
+    {
+      "fecha": "05-11",
+      "nombre": "Día del Himno Nacional Argentino",
+      "descripcion": "Conmemoración de la creación del Himno Nacional.",
+      "sugerenciaConsigna": "Planificá actividades sobre los símbolos patrios: escuchar el himno, pintar la bandera y conversar sobre la patria."
+    },
+    {
+      "fecha": "05-18",
+      "nombre": "Día de la Escarapela",
+      "descripcion": "Celebración del símbolo patrio creado en 1812.",
+      "sugerenciaConsigna": "Planificá actividades de identidad nacional: confección de escarapelas con distintas técnicas y materiales."
+    },
+    {
+      "fecha": "05-25",
+      "nombre": "Día de la Revolución de Mayo",
+      "descripcion": "Conmemoración de la Revolución de Mayo de 1810, inicio del proceso de independencia argentina.",
+      "sugerenciaConsigna": "Planificá una semana patria: dramatización del 25 de Mayo, comidas típicas, juegos coloniales y confección de escarapelas."
+    },
+    {
+      "fecha": "06-05",
+      "nombre": "Día Mundial del Medio Ambiente",
+      "descripcion": "Jornada de reflexión sobre la protección del medio ambiente.",
+      "sugerenciaConsigna": "Planificá una semana ecológica: exploración del patio, clasificación de residuos y creación de eco-ladrillos."
+    },
+    {
+      "fecha": "06-15",
+      "nombre": "Día del Libro en Argentina",
+      "descripcion": "Celebración de la literatura nacional y el fomento de la lectura.",
+      "sugerenciaConsigna": "Planificá una semana de lectura: maratón de cuentos, creación de un libro grupal y dramatización de historias."
+    },
+    {
+      "fecha": "06-20",
+      "nombre": "Día de la Bandera - Paso a la inmortalidad del Gral. Belgrano",
+      "descripcion": "Conmemoración de la muerte de Manuel Belgrano y homenaje a la bandera argentina.",
+      "sugerenciaConsigna": "Planificá una semana sobre la bandera: técnicas de arte en celeste y blanco, la historia de Belgrano adaptada y promesa a la bandera."
+    },
+    {
+      "fecha": "07-09",
+      "nombre": "Día de la Independencia",
+      "descripcion": "Conmemoración de la declaración de independencia argentina en 1816.",
+      "sugerenciaConsigna": "Planificá una semana sobre la independencia: la Casita de Tucumán en maqueta, comidas regionales y bailes folclóricos."
+    },
+    {
+      "fecha": "07-20",
+      "nombre": "Día del Amigo",
+      "descripcion": "Celebración de la amistad, valor fundamental en la convivencia.",
+      "sugerenciaConsigna": "Planificá una semana sobre la amistad: juegos cooperativos, tarjetas para amigos y cuentos sobre compartir y respetar."
+    },
+    {
+      "fecha": "08-17",
+      "nombre": "Paso a la Inmortalidad del Gral. San Martín",
+      "descripcion": "Conmemoración de la muerte de José de San Martín, Padre de la Patria.",
+      "sugerenciaConsigna": "Planificá actividades sobre San Martín: el cruce de los Andes con circuito motriz, confección de caballos y valores del prócer."
+    },
+    {
+      "fecha": "08-26",
+      "nombre": "Día de la Solidaridad (Santa Fe)",
+      "descripcion": "Fecha provincial que promueve acciones solidarias en la comunidad.",
+      "sugerenciaConsigna": "Planificá una semana sobre solidaridad: campañas de ayuda, juegos cooperativos y cuentos sobre ayudar a los demás."
+    },
+    {
+      "fecha": "09-11",
+      "nombre": "Día del Maestro",
+      "descripcion": "Homenaje a Domingo Faustino Sarmiento y a todos los docentes argentinos.",
+      "sugerenciaConsigna": "Planificá una semana de homenaje a los maestros: tarjetas, entrevistas a docentes de la escuela y dramatización de la vida escolar."
+    },
+    {
+      "fecha": "09-17",
+      "nombre": "Día del Profesor (nivel inicial: Día de la Maestra Jardinera)",
+      "descripcion": "Celebración especial para las docentes de nivel inicial.",
+      "sugerenciaConsigna": "Planificá actividades de festejo para las seños: sorpresas, tarjetas con técnicas diversas y canción grupal."
+    },
+    {
+      "fecha": "09-21",
+      "nombre": "Día de la Primavera y del Estudiante",
+      "descripcion": "Celebración del inicio de la primavera y homenaje a los estudiantes.",
+      "sugerenciaConsigna": "Planificá una semana de primavera: germinación de semillas, observación de flores, picnic en el patio y arte con elementos naturales."
+    },
+    {
+      "fecha": "10-01",
+      "nombre": "Día Internacional de la Música",
+      "descripcion": "Celebración de la música como expresión artística y cultural.",
+      "sugerenciaConsigna": "Planificá una semana musical: exploración de instrumentos, creación de cotidiáfonos y baile libre con distintos géneros."
+    },
+    {
+      "fecha": "10-12",
+      "nombre": "Día del Respeto a la Diversidad Cultural",
+      "descripcion": "Reflexión sobre la diversidad cultural y el respeto por todas las culturas.",
+      "sugerenciaConsigna": "Planificá actividades sobre diversidad: cuentos de distintas culturas, cocina del mundo y juegos tradicionales de otros países."
+    },
+    {
+      "fecha": "10-16",
+      "nombre": "Día de la Alimentación",
+      "descripcion": "Concientización sobre la alimentación saludable y nutritiva.",
+      "sugerenciaConsigna": "Planificá una semana de alimentación saludable: cocina en sala, clasificación de alimentos y huerta de aromáticas."
+    },
+    {
+      "fecha": "11-06",
+      "nombre": "Día de la Tradición (Santa Fe)",
+      "descripcion": "Celebración de las tradiciones gauchescas y culturales argentinas.",
+      "sugerenciaConsigna": "Planificá una semana gauchesca: vestimenta típica, mate y tortas fritas, relatos de la tradición y danzas folclóricas."
+    },
+    {
+      "fecha": "11-10",
+      "nombre": "Día de la Tradición Nacional",
+      "descripcion": "Homenaje a las tradiciones argentinas en honor a José Hernández, autor del Martín Fierro.",
+      "sugerenciaConsigna": "Planificá una semana sobre costumbres argentinas: juegos criollos, música folclórica, comidas típicas y vestimenta gaucha."
+    },
+    {
+      "fecha": "11-20",
+      "nombre": "Día de la Soberanía Nacional",
+      "descripcion": "Conmemoración de la Batalla de la Vuelta de Obligado en 1845.",
+      "sugerenciaConsigna": "Planificá actividades sobre los ríos argentinos: exploración del Río Paraná, barquitos de papel y cuentos sobre nuestras aguas."
+    },
+    {
+      "fecha": "11-25",
+      "nombre": "Día de la No Violencia contra la Mujer",
+      "descripcion": "Jornada internacional de concientización contra la violencia de género.",
+      "sugerenciaConsigna": "Planificá actividades sobre buen trato: cuentos de convivencia, juegos de emociones y acuerdos de sala sobre el respeto."
+    }
+  ],
+  "estaciones": [
+    {
+      "nombre": "verano",
+      "meses": [12, 1, 2],
+      "sugerencias": [
+        "Planificá una semana de juegos con agua y actividades al aire libre para los días de calor.",
+        "Planificá actividades sobre el verano: protección solar, hidratación y juegos con sombras.",
+        "Planificá una semana de exploración sensorial con arena, agua y elementos naturales del verano.",
+        "Planificá actividades sobre vacaciones y tiempo libre: collage de recuerdos y relatos de experiencias."
+      ]
+    },
+    {
+      "nombre": "otoño",
+      "meses": [3, 4, 5],
+      "sugerencias": [
+        "Planificá una semana sobre el otoño: recolección de hojas, colores cálidos y cambios en la naturaleza.",
+        "Planificá actividades con hojas secas: estampado, collage y clasificación por formas y colores.",
+        "Planificá una semana sobre los cambios estacionales: el viento, la lluvia y cómo nos abrigamos.",
+        "Planificá actividades de cosecha otoñal: frutas de estación, mermeladas y exploración de texturas."
+      ]
+    },
+    {
+      "nombre": "invierno",
+      "meses": [6, 7, 8],
+      "sugerencias": [
+        "Planificá una semana de invierno: sopas calentitas, abrigos y juegos para días de frío.",
+        "Planificá actividades sobre el frío: experimentos con hielo, ropa de abrigo y bebidas calientes.",
+        "Planificá una semana sobre la familia y el hogar: recetas caseras, mantas y cuentos junto al fuego.",
+        "Planificá actividades de arte invernal: pintura con colores fríos, copos de nieve y paisajes helados."
+      ]
+    },
+    {
+      "nombre": "primavera",
+      "meses": [9, 10, 11],
+      "sugerencias": [
+        "Planificá una semana de primavera: germinación, observación de flores y mariposas del jardín.",
+        "Planificá actividades sobre el crecimiento: plantar semillas, medir plantas y registrar cambios.",
+        "Planificá una semana sobre los insectos de primavera: mariposas, abejas y su importancia en la naturaleza.",
+        "Planificá actividades al aire libre: arte con elementos naturales, juegos en el patio y picnic primaveral."
+      ]
+    }
+  ]
+}
