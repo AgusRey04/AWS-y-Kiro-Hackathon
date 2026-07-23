@@ -1,15 +1,20 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePlan } from '../contexts/PlanContext';
 import VoiceTextToggle, { type InputMode } from '../components/VoiceTextToggle';
 import ConsignaInput from '../components/ConsignaInput';
 import VoiceRecorder from '../components/VoiceRecorder';
 import EphemerisBanner from '../components/EphemerisBanner';
+import LoadingScreen from '../components/LoadingScreen';
+import ErrorScreen from '../components/ErrorScreen';
 
 export default function HomePage() {
   const { state } = useAuth();
+  const { isLoading, error, crear } = usePlan();
   const [mode, setMode] = useState<InputMode>('texto');
   const [consigna, setConsigna] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [lastConsigna, setLastConsigna] = useState('');
 
   const nombre = state.user?.nombre ?? 'Docente';
 
@@ -47,9 +52,25 @@ export default function HomePage() {
     }
 
     setValidationError(null);
-    // API call will be implemented in task 6.3
-    alert('¡Funcionalidad de generación disponible próximamente!');
-  }, [consigna]);
+    setLastConsigna(trimmed);
+    crear(trimmed);
+  }, [consigna, crear]);
+
+  const handleRetry = useCallback(() => {
+    if (lastConsigna) {
+      crear(lastConsigna);
+    }
+  }, [lastConsigna, crear]);
+
+  // Show loading screen while generating
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  // Show error screen with retry
+  if (error) {
+    return <ErrorScreen message={error} onRetry={handleRetry} />;
+  }
 
   return (
     <div className="p-4 flex flex-col gap-5">
