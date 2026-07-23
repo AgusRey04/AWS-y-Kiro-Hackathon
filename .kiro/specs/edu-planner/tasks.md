@@ -109,7 +109,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 1: Voice transcript truncation at character limit**
     - **Validates: Requirements 1.8**
 
-  - [ ] 5.5 Implement HomeScreen with toggle, greeting, banner and CREAR button
+  - [-] 5.5 Implement HomeScreen with toggle, greeting, banner and CREAR button
     - Create VoiceTextToggle (pill shape) with "Voz" and "Texto" options, "Texto" selected by default
     - Show personalized greeting with user's name
     - Show ephemeris banner when an ephemeris is within 7 days
