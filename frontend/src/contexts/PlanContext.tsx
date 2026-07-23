@@ -50,7 +50,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('TIMEOUT')), 30000);
+        setTimeout(() => reject(new Error('TIMEOUT')), 65000);
       });
 
       const res = await Promise.race([fetchPromise, timeoutPromise]);
@@ -60,10 +60,11 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         throw new Error(errorJson.message || 'No pudimos generar tu planificación.');
       }
 
-      const json: ApiSuccessResponse<{ planificacion: Planificacion }> = await res.json();
-      setPlanificacion(json.data.planificacion);
+      const json = await res.json();
+      const planData = json.data.planificacion || json.data;
+      setPlanificacion(planData);
       setIsLoading(false);
-      navigate(`/preview/${json.data.planificacion.id}`);
+      navigate(`/preview/${planData.id}`);
     } catch (err) {
       setIsLoading(false);
       if (err instanceof Error && err.message === 'TIMEOUT') {

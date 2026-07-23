@@ -122,7 +122,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 19: Personalized greeting contains user name**
     - **Validates: Requirements 3.7, 14.1**
 
-- [ ] 6. Implement AI generation (backend + frontend loading)
+- [x] 6. Implement AI generation (backend + frontend loading)
   - [x] 6.1 Implement Gemini API integration service
     - Create Planning Service that builds prompt with consigna + curricular context of Santa Fe
     - Configure Gemini API with JSON Schema structured output (GeminiPlanificacionResponse)
@@ -140,7 +140,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 17: Ephemeris proximity detection and suggestion strategy**
     - **Validates: Requirements 3.3, 3.5, 12.1, 12.2, 12.3, 12.4, 14.5**
 
-  - [ ] 6.3 Implement frontend loading screen and API call
+  - [x] 6.3 Implement frontend loading screen and API call
     - Create PlanContext with `crear(consigna)` method calling POST `/api/planificaciones`
     - Implement Loading screen with rotating messages every 3 seconds ("Alineando objetivos...", "Cultivando tu planificación...")
     - Handle success → navigate to `/preview/:id`
