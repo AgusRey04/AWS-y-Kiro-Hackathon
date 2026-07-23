@@ -148,7 +148,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - _Requirements: 3.1, 3.2, 3.6_
 
 - [ ] 7. Implement Preview screen with tabs and inline editing
-  - [ ] 7.1 Implement PreviewScreen with header and tab navigation
+  - [x] 7.1 Implement PreviewScreen with header and tab navigation
     - Create PreviewHeader with título, subtítulo "PLANIFICACIÓN SEMANAL · NIVEL INICIAL", date range, objetivos, area curricular
     - Implement TabBar with 4 tabs: "Actividades", "Materiales", "Adaptaciones", "Fundamentación"
     - Show "Actividades" as default active tab
