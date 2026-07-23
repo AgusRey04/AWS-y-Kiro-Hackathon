@@ -123,7 +123,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Validates: Requirements 3.7, 14.1**
 
 - [ ] 6. Implement AI generation (backend + frontend loading)
-  - [-] 6.1 Implement Gemini API integration service
+  - [x] 6.1 Implement Gemini API integration service
     - Create Planning Service that builds prompt with consigna + curricular context of Santa Fe
     - Configure Gemini API with JSON Schema structured output (GeminiPlanificacionResponse)
     - Implement 30-second timeout handling
