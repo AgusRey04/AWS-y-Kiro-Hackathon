@@ -74,13 +74,13 @@ export default function PreviewPage() {
 function TabContent({ tabId, planificacion }: { tabId: string; planificacion: Planificacion }) {
   switch (tabId) {
     case 'actividades':
-      return <ActividadesTab actividades={planificacion.actividades} />;
+      return <ActividadesTab actividades={planificacion.actividades} planificacionId={planificacion.id} />;
     case 'materiales':
-      return <MaterialesTab materiales={planificacion.materiales} />;
+      return <MaterialesTab materiales={planificacion.materiales} planificacionId={planificacion.id} />;
     case 'adaptaciones':
-      return <AdaptacionesTab adaptaciones={planificacion.adaptaciones} />;
+      return <AdaptacionesTab adaptaciones={planificacion.adaptaciones} planificacionId={planificacion.id} />;
     case 'fundamentacion':
-      return <FundamentacionTab fundamentacion={planificacion.fundamentacion} />;
+      return <FundamentacionTab fundamentacion={planificacion.fundamentacion} planificacionId={planificacion.id} />;
     default:
       return (
         <div className="flex items-center justify-center py-12">

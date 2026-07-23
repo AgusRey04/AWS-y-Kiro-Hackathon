@@ -167,7 +167,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 6: Activities grouped and ordered by weekday**
     - **Validates: Requirements 4.4**
 
-  - [ ] 7.4 Implement EditableBlock component with inline editing
+  - [-] 7.4 Implement EditableBlock component with inline editing
     - Show pencil icon on touch/click of editable block
     - Enable inline text editing on activation
     - Auto-save on blur with debounce (2s) via PATCH `/api/planificaciones/:id`

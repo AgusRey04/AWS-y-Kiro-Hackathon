@@ -1,7 +1,21 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import ActividadesTab from './ActividadesTab';
 import type { Actividad } from '../types';
+
+// Mock PlanContext
+vi.mock('../contexts/PlanContext', () => ({
+  usePlan: () => ({
+    planificacion: null,
+    isLoading: false,
+    error: null,
+    crear: vi.fn(),
+    updateField: vi.fn().mockResolvedValue(undefined),
+    addActividad: vi.fn(),
+    addMaterial: vi.fn(),
+    addAdaptacion: vi.fn(),
+  }),
+}));
 
 const mockActividades: Actividad[] = [
   { id: '1', dia: 'lunes', titulo: 'Paseo por el patio', descripcion: 'Observar hojas', orden: 1 },
@@ -53,9 +67,16 @@ describe('ActividadesTab', () => {
       { id: '1', dia: 'lunes', titulo: 'Primera', descripcion: 'Desc', orden: 1 },
     ];
     render(<ActividadesTab actividades={actividades} />);
+    // Without planificacionId, items render as plain <p> with font-semibold
     const card = screen.getByRole('listitem');
     const titles = card.querySelectorAll('.font-semibold');
     expect(titles[0].textContent).toBe('Primera');
     expect(titles[1].textContent).toBe('Segunda');
+  });
+
+  it('muestra botón Agregar actividad cuando hay planificacionId', () => {
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+    const buttons = screen.getAllByText('+ Agregar actividad');
+    expect(buttons.length).toBeGreaterThan(0);
   });
 });
