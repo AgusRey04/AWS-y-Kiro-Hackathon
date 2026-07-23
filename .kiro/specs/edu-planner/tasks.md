@@ -57,8 +57,8 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 15: Email format validation**
     - **Validates: Requirements 8.4, 8.5, 8.6**
 
-- [ ] 3. Implement routing and navigation
-  - [ ] 3.1 Set up React Router with protected routes and layouts
+- [x] 3. Implement routing and navigation
+  - [x] 3.1 Set up React Router with protected routes and layouts
     - Configure routes: `/` (Landing), `/login`, `/register`, `/home`, `/preview/:id`, `/history`
     - Create AppLayout with BottomNav for authenticated routes
     - Create AuthLayout for login/register routes
@@ -66,7 +66,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Implement BottomNav with "Inicio" (house icon) and "Historial" (clock icon) with active state highlighting
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-  - [ ] 3.2 Implement Landing Page
+  - [x] 3.2 Implement Landing Page
     - Create hero section with title "Planifica con amor, enseña con libertad" and mockup image
     - Add benefits list: "Fundamentación Propia", "Actividades Editables", "Inclusión a medida"
     - Add "Empezar Gratis" CTA button (mostaza #E9B44C) navigating to `/register`
