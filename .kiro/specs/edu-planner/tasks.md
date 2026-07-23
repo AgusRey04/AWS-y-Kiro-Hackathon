@@ -74,7 +74,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Ensure responsive design from 320px width with no horizontal scroll
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-- [ ] 4. Checkpoint - Ensure all tests pass
+- [x] 4. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Implement Home screen with voice and text input
