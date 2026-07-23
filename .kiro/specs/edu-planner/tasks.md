@@ -93,7 +93,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 18: Suggestion chip count bounds**
     - **Validates: Requirements 2.2, 2.4, 2.5, 14.4**
 
-  - [ ] 5.3 Implement VoiceRecorder component with Web Speech API
+  - [x] 5.3 Implement VoiceRecorder component with Web Speech API
     - Implement feature detection (hide button if browser doesn't support Web Speech API)
     - Request microphone permission on first press
     - Configure recognition with lang 'es-AR'
