@@ -156,7 +156,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Show empty state message when a tab has no content
     - _Requirements: 4.1, 4.2, 4.3, 4.8_
 
-  - [ ] 7.2 Implement tab content components (Actividades, Materiales, Adaptaciones, Fundamentación)
+  - [-] 7.2 Implement tab content components (Actividades, Materiales, Adaptaciones, Fundamentación)
     - Create ActividadesTab with DayCards organized by day (lunes-viernes) with color-coded borders
     - Create MaterialesTab with list of materials (nombre + icono)
     - Create AdaptacionesTab with lavanda (#9B89B3) background cards

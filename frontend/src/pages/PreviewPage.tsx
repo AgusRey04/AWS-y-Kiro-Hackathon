@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { usePlan } from '../contexts/PlanContext';
 import PreviewHeader from '../components/PreviewHeader';
 import TabBar, { type TabItem } from '../components/TabBar';
+import ActividadesTab from '../components/ActividadesTab';
+import MaterialesTab from '../components/MaterialesTab';
+import AdaptacionesTab from '../components/AdaptacionesTab';
+import FundamentacionTab from '../components/FundamentacionTab';
+import type { Planificacion } from '../types';
 
 const TABS: TabItem[] = [
   { id: 'actividades', label: 'Actividades' },
@@ -64,45 +69,25 @@ export default function PreviewPage() {
   );
 }
 
-// --- Tab Content (placeholder until task 7.2 implements full content) ---
-
-import type { Planificacion } from '../types';
+// --- Tab Content ---
 
 function TabContent({ tabId, planificacion }: { tabId: string; planificacion: Planificacion }) {
   switch (tabId) {
     case 'actividades':
-      if (planificacion.actividades.length === 0) {
-        return <EmptyState message="No hay actividades disponibles para esta planificación." />;
-      }
-      return <EmptyState message="Las actividades se mostrarán aquí." />;
-
+      return <ActividadesTab actividades={planificacion.actividades} />;
     case 'materiales':
-      if (planificacion.materiales.length === 0) {
-        return <EmptyState message="No hay materiales disponibles para esta planificación." />;
-      }
-      return <EmptyState message="Los materiales se mostrarán aquí." />;
-
+      return <MaterialesTab materiales={planificacion.materiales} />;
     case 'adaptaciones':
-      if (planificacion.adaptaciones.length === 0) {
-        return <EmptyState message="No hay adaptaciones disponibles para esta planificación." />;
-      }
-      return <EmptyState message="Las adaptaciones se mostrarán aquí." />;
-
+      return <AdaptacionesTab adaptaciones={planificacion.adaptaciones} />;
     case 'fundamentacion':
-      if (!planificacion.fundamentacion) {
-        return <EmptyState message="No hay fundamentación disponible para esta planificación." />;
-      }
-      return <EmptyState message="La fundamentación se mostrará aquí." />;
-
+      return <FundamentacionTab fundamentacion={planificacion.fundamentacion} />;
     default:
-      return <EmptyState message="No hay contenido disponible para esta sección." />;
+      return (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-text-muted font-quicksand text-center text-sm">
+            No hay contenido disponible para esta sección.
+          </p>
+        </div>
+      );
   }
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center py-12">
-      <p className="text-text-muted font-quicksand text-center text-sm">{message}</p>
-    </div>
-  );
 }
