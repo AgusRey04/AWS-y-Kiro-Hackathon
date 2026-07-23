@@ -6,8 +6,8 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
 
 ## Tasks
 
-- [~] 1. Set up project structure, configuration and core interfaces
-  - [-] 1.1 Initialize monorepo with frontend (React + Vite + TypeScript + Tailwind CSS) and backend (Node.js + Express + TypeScript)
+- [x] 1. Set up project structure, configuration and core interfaces
+  - [x] 1.1 Initialize monorepo with frontend (React + Vite + TypeScript + Tailwind CSS) and backend (Node.js + Express + TypeScript)
     - Create `/frontend` and `/backend` directories
     - Configure Vite with React and TypeScript
     - Set up Tailwind CSS with the custom color palette (bg-cream, green-primary, mostaza, lavanda, etc.)
@@ -19,14 +19,14 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Configure MSW for API mocking
     - _Requirements: 13.2, 13.3_
 
-  - [~] 1.2 Set up PostgreSQL database schema and connection
+  - [x] 1.2 Set up PostgreSQL database schema and connection
     - Create database migration files for tables: usuario, planificacion, actividad, material, adaptacion
     - Implement database connection pool configuration
     - Add UUID generation for primary keys
     - Define indexes on usuario.email (unique) and planificacion.usuario_id + planificacion.created_at
     - _Requirements: 8.1, 7.2_
 
-  - [~] 1.3 Create static data file (efemérides and seasons)
+  - [x] 1.3 Create static data file (efemérides and seasons)
     - Create `efemerides.json` with Argentine national/provincial holidays and commemorative dates
     - Include season definitions for Southern Hemisphere (verano: dic-feb, otoño: mar-may, invierno: jun-ago, primavera: sep-nov)
     - Add `sugerenciaConsigna` for each ephemeris
