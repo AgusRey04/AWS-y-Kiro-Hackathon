@@ -32,8 +32,8 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Add `sugerenciaConsigna` for each ephemeris
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
 
-- [ ] 2. Implement authentication system
-  - [ ] 2.1 Implement backend auth service (register + login + session)
+- [-] 2. Implement authentication system
+  - [x] 2.1 Implement backend auth service (register + login + session)
     - Create POST `/api/auth/register` endpoint with field validation (nombre ≤100, escuela ≤150, email ≤254, password 6-72 chars)
     - Create POST `/api/auth/login` endpoint with JWT token generation
     - Create POST `/api/auth/logout` and GET `/api/auth/me` endpoints
@@ -42,7 +42,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Return 409 CONFLICT for duplicate email registration
     - _Requirements: 8.1, 8.2, 8.3, 8.5, 8.6, 9.1, 9.2, 9.3_
 
-  - [ ] 2.2 Implement frontend auth context and forms
+  - [-] 2.2 Implement frontend auth context and forms
     - Create AuthContext with useReducer for global auth state
     - Implement RegisterForm with field validation (required fields, email format, password length)
     - Implement LoginForm with "Mantener sesión iniciada" checkbox
