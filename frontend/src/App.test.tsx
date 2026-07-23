@@ -1,13 +1,20 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 import LandingPage from './pages/LandingPage';
 
 describe('App', () => {
-  it('renders landing page at root route', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
+  it('renders landing page at root route', async () => {
     render(<App />);
-    expect(screen.getByText('Planifica con amor, enseña con libertad')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Planifica con amor, enseña con libertad')).toBeInTheDocument();
+    });
   });
 });
 
