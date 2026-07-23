@@ -12,7 +12,7 @@ const __dirname = dirname(__filename);
 const dataPath = join(__dirname, '..', 'data', 'efemerides.json');
 const datosEstaticos = JSON.parse(readFileSync(dataPath, 'utf-8'));
 
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = 60_000;
 
 /**
  * Determine the current season based on Southern Hemisphere calendar.
@@ -245,7 +245,7 @@ export async function generarPlanificacion(consigna: string): Promise<GeminiPlan
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-3-flash-preview',
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: responseSchema,
