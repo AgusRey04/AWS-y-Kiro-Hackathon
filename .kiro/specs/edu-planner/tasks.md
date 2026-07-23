@@ -147,7 +147,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Handle error → show friendly message with retry button
     - _Requirements: 3.1, 3.2, 3.6_
 
-- [ ] 7. Implement Preview screen with tabs and inline editing
+- [x] 7. Implement Preview screen with tabs and inline editing
   - [x] 7.1 Implement PreviewScreen with header and tab navigation
     - Create PreviewHeader with título, subtítulo "PLANIFICACIÓN SEMANAL · NIVEL INICIAL", date range, objetivos, area curricular
     - Implement TabBar with 4 tabs: "Actividades", "Materiales", "Adaptaciones", "Fundamentación"
@@ -167,7 +167,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 6: Activities grouped and ordered by weekday**
     - **Validates: Requirements 4.4**
 
-  - [-] 7.4 Implement EditableBlock component with inline editing
+  - [x] 7.4 Implement EditableBlock component with inline editing
     - Show pencil icon on touch/click of editable block
     - Enable inline text editing on activation
     - Auto-save on blur with debounce (2s) via PATCH `/api/planificaciones/:id`
