@@ -39,3 +39,4 @@ coverage/
 # Misc
 *.tmp
 *.bak
+backend/.env.example
