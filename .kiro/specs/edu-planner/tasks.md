@@ -117,7 +117,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Validate consigna on submit (1-500 chars required)
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 3.7_
 
-  - [-] 5.6 Write property tests for home screen
+  - [x] 5.6 Write property tests for home screen
     - **Property 4: Consigna submission validation**
     - **Property 19: Personalized greeting contains user name**
     - **Validates: Requirements 3.7, 14.1**
