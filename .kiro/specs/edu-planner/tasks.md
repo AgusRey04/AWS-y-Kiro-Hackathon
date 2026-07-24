@@ -87,7 +87,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Ensure chip insertion respects 500 char total limit
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 14.4_
 
-  - [ ]* 5.2 Write property tests for text input and suggestion chips
+  - [x] 5.2 Write property tests for text input and suggestion chips
     - **Property 2: Text input character limit and counter visibility**
     - **Property 3: Suggestion chip insertion semantics**
     - **Property 18: Suggestion chip count bounds**
