@@ -105,7 +105,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Preserve partial transcript on recognition error
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
 
-  - [ ]* 5.4 Write property test for voice transcript truncation
+  - [-] 5.4 Write property test for voice transcript truncation
     - **Property 1: Voice transcript truncation at character limit**
     - **Validates: Requirements 1.8**
 
