@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { usePlan } from '../contexts/PlanContext';
 import PreviewHeader from '../components/PreviewHeader';
 import TabBar, { type TabItem } from '../components/TabBar';
@@ -16,8 +17,16 @@ const TABS: TabItem[] = [
 ];
 
 export default function PreviewPage() {
-  const { planificacion, isLoading, error } = usePlan();
+  const { id } = useParams<{ id: string }>();
+  const { planificacion, isLoading, error, loadById } = usePlan();
   const [activeTab, setActiveTab] = useState('actividades');
+
+  // Cargar la planificación por ID si no es la que ya tenemos en memoria
+  useEffect(() => {
+    if (id && planificacion?.id !== id) {
+      loadById(id);
+    }
+  }, [id, planificacion?.id, loadById]);
 
   if (isLoading) {
     return (

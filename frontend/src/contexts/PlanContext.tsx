@@ -15,6 +15,7 @@ interface PlanContextValue {
   isLoading: boolean;
   error: string | null;
   crear: (consigna: string) => Promise<void>;
+  loadById: (id: string) => Promise<void>;
   updateField: (path: string, value: string) => Promise<void>;
   addActividad: (dia: string) => void;
   addMaterial: () => void;
@@ -77,6 +78,39 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [navigate]);
+
+  const loadById = useCallback(async (id: string) => {
+    // Si ya tenemos esa planificación en memoria, no recargar
+    if (planificacion?.id === id) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+      const res = await fetch(`/api/planificaciones/${id}`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        const errorJson: ApiErrorResponse = await res.json();
+        throw new Error(errorJson.message || 'No pudimos cargar la planificación.');
+      }
+
+      const json = await res.json();
+      setPlanificacion(json.data);
+    } catch (err) {
+      const message = err instanceof Error
+        ? err.message
+        : 'Error al cargar la planificación.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [planificacion?.id]);
 
   const updateField = useCallback(async (path: string, value: string) => {
     if (!planificacion) return;
@@ -185,6 +219,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         isLoading,
         error,
         crear,
+        loadById,
         updateField,
         addActividad,
         addMaterial,
