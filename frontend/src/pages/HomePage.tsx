@@ -114,11 +114,29 @@ export default function HomePage() {
             onPartialTranscript={handleVoicePartial}
             onError={handleVoiceError}
           />
-          {consigna && (
-            <div className="rounded-xl border border-border-light px-4 py-3">
-              <p className="text-sm text-text-dark font-quicksand">{consigna}</p>
-            </div>
-          )}
+
+          {/* Transcripción en tiempo real + opción de editar */}
+          <div className="rounded-xl border border-border-light bg-white px-4 py-3 min-h-[56px] flex flex-col gap-2">
+            {consigna ? (
+              <>
+                <p className="text-sm text-text-dark font-quicksand whitespace-pre-wrap break-words">
+                  {consigna}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMode('texto')}
+                  className="self-end text-xs text-green-primary font-semibold font-quicksand hover:underline"
+                  aria-label="Cambiar a modo texto para editar la transcripción"
+                >
+                  ✏️ Editar texto
+                </button>
+              </>
+            ) : (
+              <p className="text-sm text-text-muted font-quicksand italic">
+                Tu transcripción aparecerá aquí mientras hablás...
+              </p>
+            )}
+          </div>
         </div>
       )}
 
