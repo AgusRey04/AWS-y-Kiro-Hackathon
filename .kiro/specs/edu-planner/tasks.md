@@ -233,8 +233,8 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Ensure chip count is always between 2 and 5 inclusive
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 14.4, 14.5_
 
-- [ ] 12. Apply design system and mobile-first polish
-  - [ ] 12.1 Apply global design system tokens and responsive behavior
+- [-] 12. Apply design system and mobile-first polish
+  - [-] 12.1 Apply global design system tokens and responsive behavior
     - Verify all interactive elements have min-height 56px
     - Verify color palette usage across all components
     - Verify Quicksand typography weights (bold titles, medium body)

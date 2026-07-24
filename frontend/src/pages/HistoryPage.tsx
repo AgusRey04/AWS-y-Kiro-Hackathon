@@ -56,7 +56,7 @@ function FilterChips({
           <button
             key={filter.id}
             onClick={() => onFilterChange(isActive ? null : filter.id)}
-            className={`rounded-full px-4 py-2 text-sm font-medium font-quicksand transition-all active:scale-95 ${
+            className={`rounded-full px-4 py-2 min-h-[44px] text-sm font-medium font-quicksand transition-all active:scale-95 hover:brightness-110 ${
               isActive
                 ? 'bg-green-primary text-white'
                 : 'bg-white border border-border-light text-text-dark hover:bg-gray-50'
@@ -256,7 +256,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-bg-cream p-4">
+    <div className="flex flex-col min-h-full bg-bg-cream p-4 overflow-x-hidden">
       {/* Header */}
       <header className="mb-4">
         <h1 className="text-2xl font-bold font-quicksand text-text-dark">
@@ -287,7 +287,7 @@ export default function HistoryPage() {
           <p className="text-red-600 font-quicksand mb-4">{error}</p>
           <button
             onClick={() => fetchPlans(activeFilter)}
-            className="bg-green-primary text-white font-bold font-quicksand rounded-full px-6 py-3 min-h-[56px] transition-all active:scale-95"
+            className="bg-green-primary text-white font-bold font-quicksand rounded-full px-6 py-3 min-h-[56px] transition-all active:scale-95 hover:brightness-110"
           >
             Reintentar
           </button>

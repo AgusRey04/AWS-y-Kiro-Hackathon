@@ -38,13 +38,13 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link
             to="/register"
-            className="bg-mostaza text-white font-bold px-6 py-3 min-h-[56px] rounded-full active:scale-95 transition-all flex items-center justify-center hover:opacity-90"
+            className="bg-mostaza text-white font-bold font-quicksand px-6 py-3 min-h-[56px] rounded-full active:scale-95 hover:brightness-110 transition-all flex items-center justify-center"
           >
             Empezar Gratis
           </Link>
           <Link
             to="/login"
-            className="border-2 border-green-primary text-green-primary font-bold px-6 py-3 min-h-[56px] rounded-full active:scale-95 transition-all flex items-center justify-center hover:bg-green-primary hover:text-white"
+            className="border-2 border-green-primary text-green-primary font-bold font-quicksand px-6 py-3 min-h-[56px] rounded-full active:scale-95 hover:brightness-110 transition-all flex items-center justify-center"
           >
             Iniciar Sesión
           </Link>

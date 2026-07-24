@@ -90,7 +90,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-5">
+    <div className="p-4 flex flex-col gap-5 overflow-x-hidden">
       {/* Saludo personalizado (Req 14.1) */}
       <h1 className="text-2xl font-bold text-text-dark font-quicksand">
         ¡Hola, {nombre}!
