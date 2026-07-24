@@ -6,6 +6,7 @@ import {
   buscarEfemeridesCercanas,
   GeminiServiceError,
 } from './gemini.service.js';
+import { buscarImagenUnsplash } from './unsplash.service.js';
 
 /**
  * Custom error for planificacion service operations.
@@ -50,6 +51,9 @@ export async function crear(
   // Generate planificación with Gemini
   const respuesta = await generarPlanificacion(consigna.trim());
 
+  // Buscar imagen representativa en Unsplash (no bloquea si falla)
+  const imagenUrl = await buscarImagenUnsplash(respuesta.titulo);
+
   // Determine category
   const fecha = new Date();
   const categoria = determinarCategoria(fecha);
@@ -68,8 +72,8 @@ export async function crear(
     }>(
       `INSERT INTO planificacion (
         usuario_id, titulo, consigna_original, fecha_inicio, fecha_fin,
-        objetivos, area_curricular, ambito_experiencia, fundamentacion, categoria
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        objetivos, area_curricular, ambito_experiencia, fundamentacion, categoria, imagen_url
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING id, created_at, updated_at`,
       [
         usuarioId,
@@ -82,6 +86,7 @@ export async function crear(
         respuesta.ambitoExperiencia,
         respuesta.fundamentacion,
         categoria,
+        imagenUrl,
       ]
     );
 
@@ -155,6 +160,7 @@ export async function crear(
       ambitoExperiencia: respuesta.ambitoExperiencia,
       fundamentacion: respuesta.fundamentacion,
       categoria,
+      imagenUrl: imagenUrl || undefined,
       actividades,
       materiales,
       adaptaciones,
