@@ -110,7 +110,7 @@ function PlanCard({
       <div className="p-4 flex flex-col flex-1">
         {/* Date badge */}
         <span className="inline-block text-xs font-medium text-text-muted bg-gray-100 rounded-full px-2 py-0.5 w-fit mb-2">
-          {formatDate(plan.createdAt)}
+          {plan.fechaInicio ? formatDate(plan.fechaInicio) : formatDate(plan.createdAt)}
         </span>
 
         {/* Title */}
