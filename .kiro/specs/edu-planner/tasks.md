@@ -184,7 +184,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 8: Editable block character limits by type**
     - **Validates: Requirements 5.4, 5.6**
 
-- [ ] 8. Checkpoint - Ensure all tests pass
+- [x] 8. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Implement PDF generation
