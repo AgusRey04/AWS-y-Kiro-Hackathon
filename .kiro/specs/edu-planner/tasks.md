@@ -163,7 +163,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Create FundamentacionTab with pedagogical framework text
     - _Requirements: 4.4, 4.5, 4.6, 4.7_
 
-  - [-] 7.3 Write property test for activities grouping and ordering
+  - [x] 7.3 Write property test for activities grouping and ordering
     - **Property 6: Activities grouped and ordered by weekday**
     - **Validates: Requirements 4.4**
 
