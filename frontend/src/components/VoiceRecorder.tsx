@@ -265,16 +265,7 @@ export default function VoiceRecorder({
         </div>
       )}
 
-      {/* Partial transcript display */}
-      {state.partialTranscript && (
-        <p
-          className="text-sm text-text-muted mt-1 max-w-[300px] text-center break-words"
-          aria-live="polite"
-          aria-label="Transcripción parcial"
-        >
-          {state.partialTranscript}
-        </p>
-      )}
+
 
       {/* Error messages */}
       {state.error === 'permission-denied' && (
