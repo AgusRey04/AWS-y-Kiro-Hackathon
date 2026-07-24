@@ -51,7 +51,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Redirect to `/home` on successful login/register within 3 seconds
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ]* 2.3 Write property tests for auth validation
+  - [x] 2.3 Write property tests for auth validation
     - **Property 13: Registration form field validation**
     - **Property 14: Password length validation**
     - **Property 15: Email format validation**
