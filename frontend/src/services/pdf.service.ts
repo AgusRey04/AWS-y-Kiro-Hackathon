@@ -151,7 +151,7 @@ export function generatePdf(planificacion: Planificacion): jsPDF {
   // === MATERIALES ===
   writeSectionTitle('Materiales');
   for (const material of planificacion.materiales) {
-    writeBullet(`${material.icono} ${material.nombre}`);
+    writeBullet(material.nombre);
   }
 
   // === ADAPTACIONES ===

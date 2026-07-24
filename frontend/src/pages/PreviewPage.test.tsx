@@ -9,8 +9,10 @@ vi.mock('../contexts/PlanContext', () => ({
 }));
 
 // Mock react-router-dom useParams
+const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({
   useParams: () => ({ id: 'test-id' }),
+  useNavigate: () => mockNavigate,
 }));
 
 const mockPlanificacion = {

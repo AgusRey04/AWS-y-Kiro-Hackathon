@@ -187,8 +187,8 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
 - [ ] 8. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Implement PDF generation
-  - [ ] 9.1 Implement Módulo PDF with jsPDF (client-side)
+- [x] 9. Implement PDF generation
+  - [x] 9.1 Implement Módulo PDF with jsPDF (client-side)
     - Generate A4 vertical PDF with all planificación sections (título, fechas, objetivos, área, actividades por día, materiales, adaptaciones, fundamentación)
     - Apply formatting: min 11pt body text, 15mm margins, bold section titles, 8pt vertical spacing between sections
     - Implement "Descargar PDF" button generating and downloading the file

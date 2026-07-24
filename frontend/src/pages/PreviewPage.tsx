@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { usePlan } from '../contexts/PlanContext';
 import PreviewHeader from '../components/PreviewHeader';
 import TabBar, { type TabItem } from '../components/TabBar';
@@ -19,9 +19,12 @@ const TABS: TabItem[] = [
 
 export default function PreviewPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { planificacion, isLoading, error, loadById } = usePlan();
   const [activeTab, setActiveTab] = useState('actividades');
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Cargar la planificación por ID si no es la que ya tenemos en memoria
   useEffect(() => {
@@ -72,6 +75,30 @@ export default function PreviewPage() {
     }
   };
 
+  const handleEliminar = async () => {
+    if (!planificacion) return;
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const res = await fetch(`/api/planificaciones/${planificacion.id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (res.ok) {
+        navigate('/history');
+      } else {
+        setPdfError('No se pudo eliminar la planificación. Intentá de nuevo.');
+      }
+    } catch {
+      setPdfError('Error de conexión al eliminar. Intentá de nuevo.');
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full bg-bg-cream">
       <PreviewHeader
@@ -95,7 +122,7 @@ export default function PreviewPage() {
         </div>
       </div>
 
-      {/* PDF Action Buttons */}
+      {/* Action Buttons */}
       <div className="px-4 pb-6 pt-2 flex flex-col gap-3">
         {pdfError && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
@@ -122,6 +149,33 @@ export default function PreviewPage() {
         >
           Imprimir
         </button>
+
+        {/* Eliminar */}
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="w-full border-2 border-red-500 text-red-500 font-bold font-quicksand rounded-full px-6 py-3 min-h-[56px] hover:bg-red-50 active:scale-95 transition-all"
+            aria-label="Eliminar planificación"
+          >
+            Eliminar
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={handleEliminar}
+              disabled={deleting}
+              className="flex-1 bg-red-500 text-white font-bold font-quicksand rounded-full px-4 py-3 min-h-[56px] active:scale-95 transition-all disabled:opacity-50"
+            >
+              {deleting ? 'Eliminando...' : 'Confirmar'}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="flex-1 border-2 border-gray-300 text-text-dark font-bold font-quicksand rounded-full px-4 py-3 min-h-[56px] active:scale-95 transition-all"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
