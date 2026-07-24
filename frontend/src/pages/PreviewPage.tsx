@@ -7,6 +7,7 @@ import ActividadesTab from '../components/ActividadesTab';
 import MaterialesTab from '../components/MaterialesTab';
 import AdaptacionesTab from '../components/AdaptacionesTab';
 import FundamentacionTab from '../components/FundamentacionTab';
+import { downloadPdf, printPdf } from '../services/pdf.service';
 import type { Planificacion } from '../types';
 
 const TABS: TabItem[] = [
@@ -20,6 +21,7 @@ export default function PreviewPage() {
   const { id } = useParams<{ id: string }>();
   const { planificacion, isLoading, error, loadById } = usePlan();
   const [activeTab, setActiveTab] = useState('actividades');
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Cargar la planificación por ID si no es la que ya tenemos en memoria
   useEffect(() => {
@@ -52,6 +54,24 @@ export default function PreviewPage() {
     );
   }
 
+  const handleDownloadPdf = () => {
+    try {
+      setPdfError(null);
+      downloadPdf(planificacion);
+    } catch {
+      setPdfError('No se pudo generar el PDF. Por favor, intentá de nuevo.');
+    }
+  };
+
+  const handlePrint = () => {
+    try {
+      setPdfError(null);
+      printPdf(planificacion);
+    } catch {
+      setPdfError('No se pudo generar el PDF para imprimir. Por favor, intentá de nuevo.');
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full bg-bg-cream">
       <PreviewHeader
@@ -73,6 +93,35 @@ export default function PreviewPage() {
         >
           <TabContent tabId={activeTab} planificacion={planificacion} />
         </div>
+      </div>
+
+      {/* PDF Action Buttons */}
+      <div className="px-4 pb-6 pt-2 flex flex-col gap-3">
+        {pdfError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+            <p className="text-red-600 font-quicksand text-sm">{pdfError}</p>
+            <button
+              onClick={handleDownloadPdf}
+              className="mt-2 text-red-700 font-bold font-quicksand text-sm underline"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+        <button
+          onClick={handleDownloadPdf}
+          className="w-full bg-[#E9B44C] text-white font-bold font-quicksand rounded-full px-6 py-3 min-h-[56px] hover:brightness-110 active:scale-95 transition-all"
+          aria-label="Descargar PDF"
+        >
+          Descargar PDF
+        </button>
+        <button
+          onClick={handlePrint}
+          className="w-full bg-[#4A7856] text-white font-bold font-quicksand rounded-full px-6 py-3 min-h-[56px] hover:brightness-110 active:scale-95 transition-all"
+          aria-label="Imprimir"
+        >
+          Imprimir
+        </button>
       </div>
     </div>
   );
