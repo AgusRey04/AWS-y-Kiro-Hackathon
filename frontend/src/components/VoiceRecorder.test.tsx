@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import VoiceRecorder from './VoiceRecorder';
+import type { VoiceError } from '../types';
 
 // Mock SpeechRecognition
 class MockSpeechRecognition {
@@ -55,6 +57,38 @@ describe('VoiceRecorder', () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
+
+  /**
+   * Arnés de test que replica el consumo real del componente (HomePage):
+   * el texto parcial y el final se depositan en el campo de consigna, que es
+   * el elemento que describen los requisitos 1.2 y 1.7 ("mostrar / preservar
+   * el texto parcial en el campo de consigna"). VoiceRecorder no renderiza el
+   * texto por sí mismo: lo emite por callbacks para que el campo lo muestre.
+   */
+  function ConsignaHarness({ maxChars = 500 }: { maxChars?: number }) {
+    const [consigna, setConsigna] = useState('');
+
+    return (
+      <>
+        <VoiceRecorder
+          maxChars={maxChars}
+          lang="es-AR"
+          onPartialTranscript={(text: string) => {
+            defaultProps.onPartialTranscript(text);
+            setConsigna(text);
+          }}
+          onTranscript={(text: string) => {
+            defaultProps.onTranscript(text);
+            setConsigna(text);
+          }}
+          onError={(error: VoiceError) => {
+            defaultProps.onError(error);
+          }}
+        />
+        <textarea aria-label="Consigna" value={consigna} readOnly />
+      </>
+    );
+  }
 
   describe('Feature detection', () => {
     it('hides button and shows message when Web Speech API is not supported', () => {
@@ -111,8 +145,8 @@ describe('VoiceRecorder', () => {
   });
 
   describe('Transcription', () => {
-    it('displays partial transcript during recognition', () => {
-      render(<VoiceRecorder {...defaultProps} />);
+    it('displays partial transcript in the consigna field during recognition', () => {
+      render(<ConsignaHarness />);
 
       fireEvent.click(screen.getByRole('button', { name: /iniciar grabación/i }));
 
@@ -127,10 +161,8 @@ describe('VoiceRecorder', () => {
         });
       });
 
-      expect(screen.getByLabelText('Transcripción parcial')).toHaveTextContent(
-        'hola mundo'
-      );
       expect(defaultProps.onPartialTranscript).toHaveBeenCalledWith('hola mundo');
+      expect(screen.getByLabelText('Consigna')).toHaveValue('hola mundo');
     });
 
     it('calls onTranscript when stop button is pressed', () => {
@@ -226,8 +258,8 @@ describe('VoiceRecorder', () => {
   });
 
   describe('Recognition error with preserved transcript', () => {
-    it('preserves partial transcript on recognition error', () => {
-      render(<VoiceRecorder {...defaultProps} />);
+    it('stops recording, preserves partial transcript in the consigna field and notifies on recognition error', () => {
+      render(<ConsignaHarness />);
 
       fireEvent.click(screen.getByRole('button', { name: /iniciar grabación/i }));
 
@@ -249,9 +281,20 @@ describe('VoiceRecorder', () => {
 
       expect(defaultProps.onError).toHaveBeenCalledWith('recognition-error');
       expect(defaultProps.onTranscript).toHaveBeenCalledWith('texto parcial');
-      expect(screen.getByLabelText('Transcripción parcial')).toHaveTextContent(
-        'texto parcial'
-      );
+
+      // El texto parcial queda preservado en el campo de consigna (Req 1.7)
+      expect(screen.getByLabelText('Consigna')).toHaveValue('texto parcial');
+
+      // La grabación se detuvo
+      expect(screen.queryByText('Grabando...')).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /iniciar grabación de voz/i })
+      ).toBeInTheDocument();
+
+      // Notificación visual del error
+      expect(
+        screen.getByText(/error de reconocimiento\. se conservó el texto parcial\./i)
+      ).toBeInTheDocument();
     });
   });
 });
