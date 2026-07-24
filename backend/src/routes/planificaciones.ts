@@ -81,8 +81,94 @@ planificacionesRoutes.post('/', async (req: Request, res: Response) => {
   });
 });
 
-planificacionesRoutes.get('/', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
+/**
+ * GET /api/planificaciones
+ * List planificaciones for the authenticated user.
+ * Optional query param: ?filtro=recientes|efemerides|proyectos
+ */
+planificacionesRoutes.get('/', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const filtro = req.query.filtro as string | undefined;
+
+      // Validate filtro param if provided
+      const validFiltros = ['recientes', 'efemerides', 'proyectos'];
+      if (filtro && !validFiltros.includes(filtro)) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: `Filtro inválido. Valores permitidos: ${validFiltros.join(', ')}`,
+        });
+        return;
+      }
+
+      // Build query based on filter
+      let sql: string;
+      let params: (string | undefined)[];
+
+      if (filtro && filtro !== 'recientes') {
+        // Filter by categoria for efemerides and proyectos
+        sql = `
+          SELECT id, titulo, consigna_original, fecha_inicio, fecha_fin,
+                 categoria, imagen_url, created_at
+          FROM planificacion
+          WHERE usuario_id = $1 AND categoria = $2
+          ORDER BY created_at DESC
+        `;
+        params = [user.id, filtro];
+      } else {
+        // Default / recientes: all planificaciones ordered by created_at DESC
+        sql = `
+          SELECT id, titulo, consigna_original, fecha_inicio, fecha_fin,
+                 categoria, imagen_url, created_at
+          FROM planificacion
+          WHERE usuario_id = $1
+          ORDER BY created_at DESC
+        `;
+        params = [user.id];
+      }
+
+      const result = await query(sql, params);
+
+      // Map rows to summary objects with truncated description
+      interface PlanificacionRow {
+        id: string;
+        titulo: string;
+        consigna_original: string;
+        fecha_inicio: string | null;
+        fecha_fin: string | null;
+        categoria: string;
+        imagen_url: string | null;
+        created_at: string;
+      }
+
+      const data = (result.rows as PlanificacionRow[]).map((row) => {
+        const descripcion = row.consigna_original || '';
+        const descripcionTruncada = descripcion.length > 80
+          ? descripcion.substring(0, 80) + '...'
+          : descripcion;
+
+        return {
+          id: row.id,
+          titulo: row.titulo,
+          descripcion: descripcionTruncada,
+          fechaInicio: row.fecha_inicio,
+          fechaFin: row.fecha_fin,
+          categoria: row.categoria,
+          imagenUrl: row.imagen_url,
+          createdAt: row.created_at,
+        };
+      });
+
+      res.status(200).json({ data });
+    } catch (error) {
+      console.error('Planificaciones list error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
 });
 
 planificacionesRoutes.get('/:id', (_req, res) => {
