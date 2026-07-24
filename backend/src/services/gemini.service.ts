@@ -69,7 +69,8 @@ Tu tarea es generar una planificación semanal completa para una docente de jard
 "${consigna}"
 
 ## Estación del año actual
-Estamos en ${estacion} (hemisferio sur).`;
+Estamos en ${estacion} (hemisferio sur).
+La fecha de hoy es ${fecha.toISOString().split('T')[0]}.`;
 
   if (estacionData) {
     prompt += `\nSugerencias estacionales: ${estacionData.sugerencias[0]}`;
