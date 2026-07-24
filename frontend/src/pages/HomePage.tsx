@@ -1,12 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlan } from '../contexts/PlanContext';
 import VoiceTextToggle, { type InputMode } from '../components/VoiceTextToggle';
 import ConsignaInput from '../components/ConsignaInput';
 import VoiceRecorder from '../components/VoiceRecorder';
 import EphemerisBanner from '../components/EphemerisBanner';
+import SuggestionChips from '../components/SuggestionChips';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
+import { fetchSuggestionChips } from '../services/suggestion.service';
 
 export default function HomePage() {
   const { state } = useAuth();
@@ -16,7 +18,22 @@ export default function HomePage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [lastConsigna, setLastConsigna] = useState('');
 
+  const [chips, setChips] = useState<string[]>([]);
+
   const nombre = state.user?.nombre ?? 'Docente';
+
+  useEffect(() => {
+    fetchSuggestionChips().then(setChips);
+  }, []);
+
+  const handleChipSelect = useCallback((chip: string) => {
+    setConsigna((prev) => {
+      if (prev.trim() === '') return chip.slice(0, 500);
+      const combined = prev + ' ' + chip;
+      return combined.slice(0, 500);
+    });
+    setValidationError(null);
+  }, []);
 
   const handleVoiceTranscript = useCallback((text: string) => {
     setConsigna(text);
@@ -104,6 +121,9 @@ export default function HomePage() {
           )}
         </div>
       )}
+
+      {/* Chips de sugerencia (Req 14.4) */}
+      <SuggestionChips chips={chips} onChipSelect={handleChipSelect} />
 
       {/* Mensaje de validación (Req 3.7) */}
       {validationError && (

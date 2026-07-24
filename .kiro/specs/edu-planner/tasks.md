@@ -225,8 +225,8 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 12: History ordering and filtering**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
 
-- [ ] 11. Implement static data service and ephemeris integration
-  - [ ] 11.1 Implement backend static data endpoints and frontend suggestion service
+- [-] 11. Implement static data service and ephemeris integration
+  - [-] 11.1 Implement backend static data endpoints and frontend suggestion service
     - Create GET `/api/datos-estaticos/efemerides?dias=7` endpoint returning upcoming ephemerides
     - Create GET `/api/datos-estaticos/sugerencias` endpoint returning suggestion chips based on proximity rules
     - Implement frontend SuggestionService: if ephemeris within 7 days → use ephemeris-based chips; otherwise → season-based chips
