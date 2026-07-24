@@ -50,17 +50,58 @@ function getCurrentSeason(today: Date = new Date()): string {
 }
 
 /**
+ * Returns the ephemerides that fall within the next `dias` days from `today`.
+ * Pure function: date and data set are injectable for testing.
+ */
+function obtenerEfemeridesProximas(
+  dias: number = 7,
+  today: Date = new Date(),
+  efemerides: Efemeride[] = datosEstaticos.efemerides
+): Efemeride[] {
+  return efemerides.filter((ef) => isWithinDays(ef.fecha, dias, today));
+}
+
+/**
+ * Builds the suggestion chips for the Home screen.
+ * - If at least one ephemeris falls within the next 7 days → chips based on those ephemerides
+ *   (padded with season suggestions when there aren't enough ephemeris chips).
+ * - Otherwise → chips based on the current season.
+ * Always returns between 2 and 5 chips (as long as the static data provides enough).
+ * Pure function: date and data set are injectable for testing.
+ */
+function construirSugerencias(
+  today: Date = new Date(),
+  datos: DatosEstaticos = datosEstaticos
+): { chips: string[]; efemeridesProximas: Efemeride[]; origen: 'efemerides' | 'estacion' } {
+  const efemeridesProximas = obtenerEfemeridesProximas(7, today, datos.efemerides);
+  const origen: 'efemerides' | 'estacion' =
+    efemeridesProximas.length > 0 ? 'efemerides' : 'estacion';
+
+  let chips: string[] = efemeridesProximas.map((ef) => ef.sugerenciaConsigna);
+
+  const seasonName = getCurrentSeason(today);
+  const season = datos.estaciones.find((e) => e.nombre === seasonName);
+
+  // If we don't have enough chips from ephemerides, pad with season-based
+  if (chips.length < 2 && season) {
+    const seasonChips = season.sugerencias.filter((s) => !chips.includes(s));
+    chips = [...chips, ...seasonChips];
+  }
+
+  // Ensure at most 5 chips
+  chips = chips.slice(0, 5);
+
+  return { chips, efemeridesProximas, origen };
+}
+
+/**
  * GET /api/datos-estaticos/efemerides?dias=7
  * Returns ephemerides that fall within the next `dias` days from today.
  */
 datosEstaticosRoutes.get('/efemerides', (req, res) => {
   const dias = Math.max(1, parseInt(req.query.dias as string) || 7);
 
-  const upcoming: Efemeride[] = datosEstaticos.efemerides.filter((ef) =>
-    isWithinDays(ef.fecha, dias)
-  );
-
-  res.json({ data: upcoming });
+  res.json({ data: obtenerEfemeridesProximas(dias) });
 });
 
 /**
@@ -70,50 +111,11 @@ datosEstaticosRoutes.get('/efemerides', (req, res) => {
  * - Otherwise → chips from the current season's suggestions
  * Always returns between 2 and 5 chips.
  */
-datosEstaticosRoutes.get('/sugerencias', (req, res) => {
-  const upcomingEfemerides = datosEstaticos.efemerides.filter((ef) =>
-    isWithinDays(ef.fecha, 7)
-  );
-
-  let chips: string[] = [];
-
-  if (upcomingEfemerides.length > 0) {
-    // Use ephemeris-based suggestions
-    chips = upcomingEfemerides.map((ef) => ef.sugerenciaConsigna);
-  }
-
-  // If we don't have enough chips from ephemerides, pad with season-based
-  if (chips.length < 2) {
-    const seasonName = getCurrentSeason();
-    const season = datosEstaticos.estaciones.find((e) => e.nombre === seasonName);
-    if (season) {
-      // Add season suggestions that aren't already in chips
-      const seasonChips = season.sugerencias.filter((s) => !chips.includes(s));
-      chips = [...chips, ...seasonChips];
-    }
-  }
-
-  // Ensure between 2 and 5 chips
-  chips = chips.slice(0, 5);
-
-  // If still less than 2 (edge case with very little data), pad with any available season
-  if (chips.length < 2) {
-    const seasonName = getCurrentSeason();
-    const season = datosEstaticos.estaciones.find((e) => e.nombre === seasonName);
-    if (season) {
-      while (chips.length < 2 && chips.length < season.sugerencias.length) {
-        const suggestion = season.sugerencias[chips.length];
-        if (!chips.includes(suggestion)) {
-          chips.push(suggestion);
-        } else {
-          break;
-        }
-      }
-    }
-  }
+datosEstaticosRoutes.get('/sugerencias', (_req, res) => {
+  const { chips } = construirSugerencias();
 
   res.json({ data: chips });
 });
 
 // Export helpers for testing
-export { isWithinDays, getCurrentSeason };
+export { isWithinDays, getCurrentSeason, obtenerEfemeridesProximas, construirSugerencias };

@@ -134,7 +134,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Consider current season (Southern Hemisphere) for activity content
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.8, 12.1, 12.2_
 
-  - [ ]* 6.2 Write property tests for Gemini response parsing and static data
+  - [x] 6.2 Write property tests for Gemini response parsing and static data
     - **Property 5: Gemini response structural integrity**
     - **Property 16: Date-to-season mapping (Southern Hemisphere)**
     - **Property 17: Ephemeris proximity detection and suggestion strategy**
