@@ -232,7 +232,18 @@ export function validarRespuesta(data: unknown): data is GeminiPlanificacionResp
 }
 
 /**
+ * Lista de modelos en orden de preferencia. Si uno falla por rate limit (429),
+ * se intenta con el siguiente.
+ */
+const MODELS = ['gemini-3-flash-preview',
+  'gemini-2.5-flash-preview-05-20',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+];
+
+/**
  * Call Gemini API to generate a planificación.
+ * Intenta con cada modelo en orden; si recibe 429 (rate limit), pasa al siguiente.
  */
 export async function generarPlanificacion(consigna: string): Promise<GeminiPlanificacionResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -245,64 +256,86 @@ export async function generarPlanificacion(consigna: string): Promise<GeminiPlan
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-3-flash-preview',
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: responseSchema,
-    },
-  });
-
   const fecha = new Date();
   const prompt = construirPrompt(consigna, fecha);
 
-  // Race between generation and timeout
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
-      reject(new GeminiServiceError(
-        ApiErrorCode.AI_TIMEOUT,
-        'La generación de la planificación tardó demasiado. Por favor, intentá de nuevo.',
-        504
-      ));
-    }, TIMEOUT_MS);
-  });
+  let lastError: Error | null = null;
 
-  let result;
-  try {
-    result = await Promise.race([
-      model.generateContent(prompt),
-      timeoutPromise,
-    ]);
-  } catch (error) {
-    if (error instanceof GeminiServiceError) throw error;
-    throw new GeminiServiceError(
-      ApiErrorCode.AI_GENERATION_FAILED,
-      'No pudimos generar tu planificación. Por favor, intentá de nuevo.',
-      502
-    );
+  for (const modelName of MODELS) {
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: responseSchema,
+      },
+    });
+
+    // Race between generation and timeout
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new GeminiServiceError(
+          ApiErrorCode.AI_TIMEOUT,
+          'La generación de la planificación tardó demasiado. Por favor, intentá de nuevo.',
+          504
+        ));
+      }, TIMEOUT_MS);
+    });
+
+    let result;
+    try {
+      console.log(`Intentando generar con modelo: ${modelName}`);
+      result = await Promise.race([
+        model.generateContent(prompt),
+        timeoutPromise,
+      ]);
+    } catch (error) {
+      if (error instanceof GeminiServiceError) throw error;
+
+      // Si es rate limit (429) o resource exhausted, intentar con el siguiente modelo
+      const errMsg = error instanceof Error ? error.message : String(error);
+      if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota')) {
+        console.warn(`Modelo ${modelName} agotado, intentando siguiente...`);
+        lastError = error instanceof Error ? error : new Error(errMsg);
+        continue;
+      }
+
+      throw new GeminiServiceError(
+        ApiErrorCode.AI_GENERATION_FAILED,
+        'No pudimos generar tu planificación. Por favor, intentá de nuevo.',
+        502
+      );
+    }
+
+    // Parse JSON response
+    let parsed: unknown;
+    try {
+      const responseText = result.response.text();
+      parsed = JSON.parse(responseText);
+    } catch {
+      throw new GeminiServiceError(
+        ApiErrorCode.AI_PARSE_ERROR,
+        'Hubo un problema procesando la respuesta de la IA. ¿Reintentamos?',
+        422
+      );
+    }
+
+    // Validate structure
+    if (!validarRespuesta(parsed)) {
+      throw new GeminiServiceError(
+        ApiErrorCode.AI_PARSE_ERROR,
+        'La respuesta de la IA no tiene el formato esperado. Por favor, intentá de nuevo.',
+        422
+      );
+    }
+
+    console.log(`Planificación generada exitosamente con modelo: ${modelName}`);
+    return parsed;
   }
 
-  // Parse JSON response
-  let parsed: unknown;
-  try {
-    const responseText = result.response.text();
-    parsed = JSON.parse(responseText);
-  } catch {
-    throw new GeminiServiceError(
-      ApiErrorCode.AI_PARSE_ERROR,
-      'Hubo un problema procesando la respuesta de la IA. ¿Reintentamos?',
-      422
-    );
-  }
-
-  // Validate structure
-  if (!validarRespuesta(parsed)) {
-    throw new GeminiServiceError(
-      ApiErrorCode.AI_PARSE_ERROR,
-      'La respuesta de la IA no tiene el formato esperado. Por favor, intentá de nuevo.',
-      422
-    );
-  }
-
-  return parsed;
+  // Si todos los modelos fallaron
+  throw new GeminiServiceError(
+    ApiErrorCode.AI_GENERATION_FAILED,
+    'Todos los modelos de IA están agotados. Por favor, intentá más tarde.',
+    502
+  );
 }

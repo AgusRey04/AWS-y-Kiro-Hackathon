@@ -32,7 +32,7 @@ const mockPlans = [
     descripcion: 'Planificación para trabajar el Día de la Bandera con actividades...',
     fechaInicio: '2025-06-16',
     fechaFin: '2025-06-20',
-    categoria: 'efemerides',
+    categoria: 'archivado',
     imagenUrl: null,
     createdAt: '2025-06-15T08:00:00Z',
   },
@@ -120,16 +120,16 @@ describe('HistoryPage', () => {
     // Date badge
     expect(screen.getByText('1 Jun 2025')).toBeInTheDocument();
 
-    // Category chips
+    // Category chips (inside cards)
     expect(screen.getByText('Reciente')).toBeInTheDocument();
-    expect(screen.getByText('Efeméride')).toBeInTheDocument();
+    expect(screen.getAllByText('Archivado').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Proyecto')).toBeInTheDocument();
 
     // Action buttons (3 cards × 2 buttons)
     const verButtons = screen.getAllByRole('button', { name: 'Ver' });
-    const reImprimirButtons = screen.getAllByRole('button', { name: 'Re-Imprimir' });
+    const archivarButtons = screen.getAllByRole('button', { name: 'Archivar' });
     expect(verButtons).toHaveLength(3);
-    expect(reImprimirButtons).toHaveLength(3);
+    expect(archivarButtons).toHaveLength(3);
   });
 
   it('los filter chips funcionan correctamente', async () => {
@@ -138,7 +138,7 @@ describe('HistoryPage', () => {
         const url = new URL(request.url);
         const filtro = url.searchParams.get('filtro');
 
-        if (filtro === 'efemerides') {
+        if (filtro === 'archivado') {
           return HttpResponse.json({
             data: [mockPlans[1]],
           });
@@ -154,9 +154,9 @@ describe('HistoryPage', () => {
       expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();
     });
 
-    // Click Efemérides filter
-    const efemeridesChip = screen.getByRole('button', { name: 'Efemérides' });
-    fireEvent.click(efemeridesChip);
+    // Click Archivado filter
+    const archivadoChip = screen.getByRole('button', { name: 'Archivado' });
+    fireEvent.click(archivadoChip);
 
     await waitFor(() => {
       expect(screen.getByText('Día de la Bandera')).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe('HistoryPage', () => {
     expect(screen.queryByText('Proyecto huerta escolar')).not.toBeInTheDocument();
 
     // Filter chip should show active state
-    expect(efemeridesChip).toHaveAttribute('aria-pressed', 'true');
+    expect(archivadoChip).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('el botón "Ver" navega a /preview/:id', async () => {
@@ -183,8 +183,14 @@ describe('HistoryPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/preview/plan-1');
   });
 
-  it('el botón "Re-Imprimir" muestra alerta de funcionalidad no disponible', async () => {
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  it('el botón "Archivar" llama al endpoint de archivado', async () => {
+    let archiveCalled = false;
+    server.use(
+      http.patch('/api/planificaciones/:id/archivar', () => {
+        archiveCalled = true;
+        return HttpResponse.json({ data: { success: true } });
+      })
+    );
 
     renderHistoryPage();
 
@@ -192,14 +198,12 @@ describe('HistoryPage', () => {
       expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();
     });
 
-    const reImprimirButtons = screen.getAllByRole('button', { name: 'Re-Imprimir' });
-    fireEvent.click(reImprimirButtons[0]);
+    const archivarButtons = screen.getAllByRole('button', { name: 'Archivar' });
+    fireEvent.click(archivarButtons[0]);
 
-    expect(alertMock).toHaveBeenCalledWith(
-      'La generación de PDF aún no está disponible. Esta funcionalidad se implementará próximamente.'
-    );
-
-    alertMock.mockRestore();
+    await waitFor(() => {
+      expect(archiveCalled).toBe(true);
+    });
   });
 
   it('muestra error y botón reintentar cuando la API falla', async () => {
