@@ -9,12 +9,12 @@ interface PlanificacionSummary {
   descripcion: string;
   fechaInicio: string | null;
   fechaFin: string | null;
-  categoria: 'recientes' | 'efemerides' | 'proyectos';
+  categoria: 'recientes' | 'efemerides' | 'proyectos' | 'archivado';
   imagenUrl: string | null;
   createdAt: string;
 }
 
-type Filtro = 'recientes' | 'efemerides' | 'proyectos';
+type Filtro = 'recientes' | 'efemerides' | 'proyectos' | 'archivado';
 
 // --- Category chip colors ---
 
@@ -22,12 +22,14 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   recientes: { bg: 'bg-green-primary/10', text: 'text-green-primary' },
   efemerides: { bg: 'bg-mostaza/10', text: 'text-mostaza' },
   proyectos: { bg: 'bg-lavanda/10', text: 'text-lavanda' },
+  archivado: { bg: 'bg-gray-200', text: 'text-text-muted' },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
   recientes: 'Reciente',
   efemerides: 'Efeméride',
   proyectos: 'Proyecto',
+  archivado: 'Archivado',
 };
 
 // --- FilterChips component ---
@@ -43,6 +45,7 @@ function FilterChips({
     { id: 'recientes', label: 'Recientes' },
     { id: 'efemerides', label: 'Efemérides' },
     { id: 'proyectos', label: 'Proyectos' },
+    { id: 'archivado', label: 'Archivados' },
   ];
 
   return (
@@ -73,11 +76,11 @@ function FilterChips({
 function PlanCard({
   plan,
   onVer,
-  onReImprimir,
+  onArchivar,
 }: {
   plan: PlanificacionSummary;
   onVer: () => void;
-  onReImprimir: () => void;
+  onArchivar: () => void;
 }) {
   const categoryColor = CATEGORY_COLORS[plan.categoria] || CATEGORY_COLORS.recientes;
   const categoryLabel = CATEGORY_LABELS[plan.categoria] || plan.categoria;
@@ -141,10 +144,10 @@ function PlanCard({
             Ver
           </button>
           <button
-            onClick={onReImprimir}
+            onClick={onArchivar}
             className="flex-1 border-2 border-green-primary text-green-primary font-bold font-quicksand text-sm rounded-full px-4 py-3 min-h-[56px] transition-all active:scale-95 hover:bg-green-primary/5"
           >
-            Re-Imprimir
+            {plan.categoria === 'archivado' ? 'Desarchivar' : 'Archivar'}
           </button>
         </div>
       </div>
@@ -227,8 +230,25 @@ export default function HistoryPage() {
     navigate(`/preview/${id}`);
   };
 
-  const handleReImprimir = () => {
-    alert('La generación de PDF aún no está disponible. Esta funcionalidad se implementará próximamente.');
+  const handleArchivar = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const res = await fetch(`/api/planificaciones/${id}/archivar`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (res.ok) {
+        // Refrescar la lista para reflejar el cambio de categoría
+        fetchPlans(activeFilter);
+      } else {
+        setError('No se pudo archivar la planificación. Intentá de nuevo.');
+      }
+    } catch {
+      setError('Error de conexión al archivar. Intentá de nuevo.');
+    }
   };
 
   const handleNavigateHome = () => {
@@ -285,7 +305,7 @@ export default function HistoryPage() {
               key={plan.id}
               plan={plan}
               onVer={() => handleVer(plan.id)}
-              onReImprimir={() => handleReImprimir()}
+              onArchivar={() => handleArchivar(plan.id)}
             />
           ))}
         </div>
