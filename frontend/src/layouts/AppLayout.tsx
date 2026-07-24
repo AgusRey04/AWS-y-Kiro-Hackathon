@@ -3,7 +3,7 @@ import BottomNav from '../components/BottomNav';
 
 export default function AppLayout() {
   return (
-    <div className="min-h-screen bg-bg-cream pb-[56px]">
+    <div className="min-h-screen bg-bg-cream pb-[56px] overflow-x-hidden">
       <main>
         <Outlet />
       </main>

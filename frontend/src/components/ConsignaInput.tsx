@@ -60,7 +60,7 @@ export default function ConsignaInput({
           onChange={handleChange}
           placeholder="¿Qué querés trabajar esta semana?"
           maxLength={maxLength}
-          className="w-full min-h-[56px] rounded-xl border border-border-light px-4 py-3 text-text-dark font-quicksand font-medium resize-y focus:outline-none focus:border-green-primary transition-colors placeholder:text-text-muted"
+          className="w-full min-h-[56px] rounded-xl border border-border-light px-4 py-3 text-text-dark font-quicksand font-medium resize-y focus:outline-none focus:border-green-primary focus:ring-2 focus:ring-[#4A7856]/20 transition-colors placeholder:text-text-muted"
           aria-label="Consigna de planificación"
           rows={2}
         />

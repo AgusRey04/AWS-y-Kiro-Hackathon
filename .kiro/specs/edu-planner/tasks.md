@@ -51,7 +51,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Redirect to `/home` on successful login/register within 3 seconds
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ]* 2.3 Write property tests for auth validation
+  - [x] 2.3 Write property tests for auth validation
     - **Property 13: Registration form field validation**
     - **Property 14: Password length validation**
     - **Property 15: Email format validation**
@@ -105,7 +105,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Preserve partial transcript on recognition error
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
 
-  - [ ]* 5.4 Write property test for voice transcript truncation
+  - [-] 5.4 Write property test for voice transcript truncation
     - **Property 1: Voice transcript truncation at character limit**
     - **Validates: Requirements 1.8**
 
@@ -233,8 +233,8 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Ensure chip count is always between 2 and 5 inclusive
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 14.4, 14.5_
 
-- [ ] 12. Apply design system and mobile-first polish
-  - [ ] 12.1 Apply global design system tokens and responsive behavior
+- [x] 12. Apply design system and mobile-first polish
+  - [x] 12.1 Apply global design system tokens and responsive behavior
     - Verify all interactive elements have min-height 56px
     - Verify color palette usage across all components
     - Verify Quicksand typography weights (bold titles, medium body)

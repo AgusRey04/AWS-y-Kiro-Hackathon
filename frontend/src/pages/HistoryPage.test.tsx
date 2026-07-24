@@ -125,11 +125,13 @@ describe('HistoryPage', () => {
     expect(screen.getAllByText('Archivado').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Proyecto')).toBeInTheDocument();
 
-    // Action buttons (3 cards × 2 buttons)
+    // Action buttons (3 cards × 2 buttons: Ver + Archivar/Desarchivar)
     const verButtons = screen.getAllByRole('button', { name: 'Ver' });
-    const archivarButtons = screen.getAllByRole('button', { name: 'Archivar' });
     expect(verButtons).toHaveLength(3);
-    expect(archivarButtons).toHaveLength(3);
+    // 2 cards show "Archivar", 1 card (archivado) shows "Desarchivar"
+    const archivarButtons = screen.getAllByRole('button', { name: 'Archivar' });
+    const desarchivarButtons = screen.getAllByRole('button', { name: 'Desarchivar' });
+    expect(archivarButtons.length + desarchivarButtons.length).toBe(3);
   });
 
   it('los filter chips funcionan correctamente', async () => {
@@ -154,8 +156,8 @@ describe('HistoryPage', () => {
       expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();
     });
 
-    // Click Archivado filter
-    const archivadoChip = screen.getByRole('button', { name: 'Archivado' });
+    // Click Archivados filter
+    const archivadoChip = screen.getByRole('button', { name: 'Archivados' });
     fireEvent.click(archivadoChip);
 
     await waitFor(() => {

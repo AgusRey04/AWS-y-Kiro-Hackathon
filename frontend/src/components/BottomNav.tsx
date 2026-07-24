@@ -30,7 +30,7 @@ function ClockIcon({ className }: { className?: string }) {
 
 export default function BottomNav() {
   const linkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-col items-center justify-center flex-1 py-2 text-xs font-medium transition-colors ${
+    `flex flex-col items-center justify-center flex-1 py-2 text-xs font-medium font-quicksand transition-colors ${
       isActive ? 'text-green-primary' : 'text-text-muted'
     }`;
 

@@ -100,7 +100,7 @@ export default function PreviewPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-bg-cream">
+    <div className="flex flex-col min-h-full bg-bg-cream overflow-x-hidden">
       <PreviewHeader
         titulo={planificacion.titulo}
         fechaInicio={planificacion.fechaInicio}

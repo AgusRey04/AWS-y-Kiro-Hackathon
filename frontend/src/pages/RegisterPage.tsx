@@ -187,7 +187,7 @@ export default function RegisterPage() {
           type="submit"
           disabled={isSubmitting}
           className="w-full min-h-[56px] rounded-full bg-green-primary text-white font-bold
-            font-quicksand active:scale-95 transition-all disabled:opacity-50"
+            font-quicksand active:scale-95 hover:brightness-110 transition-all disabled:opacity-50"
         >
           {isSubmitting ? 'Registrando...' : 'Registrarse'}
         </button>

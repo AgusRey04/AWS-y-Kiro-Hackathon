@@ -17,7 +17,7 @@ export default function VoiceTextToggle({ mode, onChange }: VoiceTextToggleProps
         role="radio"
         aria-checked={mode === 'voz'}
         onClick={() => onChange('voz')}
-        className={`rounded-full px-5 py-2 min-h-[40px] text-sm font-semibold font-quicksand transition-all ${
+        className={`rounded-full px-5 py-2 min-h-[40px] text-sm font-semibold font-quicksand transition-all active:scale-95 ${
           mode === 'voz'
             ? 'bg-green-primary text-white shadow-sm'
             : 'bg-transparent text-text-muted hover:text-text-dark'
@@ -30,7 +30,7 @@ export default function VoiceTextToggle({ mode, onChange }: VoiceTextToggleProps
         role="radio"
         aria-checked={mode === 'texto'}
         onClick={() => onChange('texto')}
-        className={`rounded-full px-5 py-2 min-h-[40px] text-sm font-semibold font-quicksand transition-all ${
+        className={`rounded-full px-5 py-2 min-h-[40px] text-sm font-semibold font-quicksand transition-all active:scale-95 ${
           mode === 'texto'
             ? 'bg-green-primary text-white shadow-sm'
             : 'bg-transparent text-text-muted hover:text-text-dark'
