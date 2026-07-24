@@ -179,7 +179,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Implement "Agregar actividad" and "Agregar item personalizado" buttons
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
 
-  - [ ]* 7.5 Write property tests for inline editing
+  - [x] 7.5 Write property tests for inline editing
     - **Property 7: Structural preservation during inline editing**
     - **Property 8: Editable block character limits by type**
     - **Validates: Requirements 5.4, 5.6**
