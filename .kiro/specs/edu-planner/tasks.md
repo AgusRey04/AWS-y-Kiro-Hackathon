@@ -204,7 +204,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Validates: Requirements 6.1, 6.6**
 
 - [ ] 10. Implement History screen
-  - [ ] 10.1 Implement backend endpoint for planificaciones listing with filters
+  - [x] 10.1 Implement backend endpoint for planificaciones listing with filters
     - Create GET `/api/planificaciones` with `?filtro=recientes|efemerides|proyectos` query param
     - Order by created_at descending by default
     - Filter by categoria field for efemerides and proyectos
