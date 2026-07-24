@@ -152,8 +152,8 @@ planificacionesRoutes.get('/', async (req: Request, res: Response) => {
           id: row.id,
           titulo: row.titulo,
           descripcion: descripcionTruncada,
-          fechaInicio: row.fecha_inicio,
-          fechaFin: row.fecha_fin,
+          fechaInicio: row.fecha_inicio ? new Date(row.fecha_inicio).toISOString().split('T')[0] : null,
+          fechaFin: row.fecha_fin ? new Date(row.fecha_fin).toISOString().split('T')[0] : null,
           categoria: row.categoria,
           imagenUrl: row.imagen_url,
           createdAt: row.created_at,
@@ -171,8 +171,103 @@ planificacionesRoutes.get('/', async (req: Request, res: Response) => {
   });
 });
 
-planificacionesRoutes.get('/:id', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
+/**
+ * GET /api/planificaciones/:id
+ * Get a single planificación with all related data (actividades, materiales, adaptaciones).
+ */
+planificacionesRoutes.get('/:id', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const { id } = req.params;
+
+      // Get planificación
+      const planResult = await query(
+        `SELECT id, titulo, consigna_original, fecha_inicio, fecha_fin,
+                objetivos, area_curricular, ambito_experiencia, fundamentacion,
+                categoria, imagen_url, created_at
+         FROM planificacion
+         WHERE id = $1 AND usuario_id = $2`,
+        [id, user.id]
+      );
+
+      if (planResult.rows.length === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Planificación no encontrada.',
+        });
+        return;
+      }
+
+      const row = planResult.rows[0] as {
+        id: string;
+        titulo: string;
+        consigna_original: string;
+        fecha_inicio: string;
+        fecha_fin: string;
+        objetivos: string[];
+        area_curricular: string;
+        ambito_experiencia: string;
+        fundamentacion: string;
+        categoria: string;
+        imagen_url: string | null;
+        created_at: string;
+      };
+
+      // Get actividades
+      const actResult = await query(
+        `SELECT id, dia, titulo, descripcion, orden
+         FROM actividad
+         WHERE planificacion_id = $1
+         ORDER BY orden ASC`,
+        [id]
+      );
+
+      // Get materiales
+      const matResult = await query(
+        `SELECT id, nombre, icono, orden
+         FROM material
+         WHERE planificacion_id = $1
+         ORDER BY orden ASC`,
+        [id]
+      );
+
+      // Get adaptaciones
+      const adpResult = await query(
+        `SELECT id, categoria, titulo, descripcion, orden
+         FROM adaptacion
+         WHERE planificacion_id = $1
+         ORDER BY orden ASC`,
+        [id]
+      );
+
+      const planificacion = {
+        id: row.id,
+        titulo: row.titulo,
+        consignaOriginal: row.consigna_original,
+        fechaInicio: row.fecha_inicio ? new Date(row.fecha_inicio).toISOString().split('T')[0] : null,
+        fechaFin: row.fecha_fin ? new Date(row.fecha_fin).toISOString().split('T')[0] : null,
+        objetivos: row.objetivos || [],
+        areaCurricular: row.area_curricular,
+        ambitoExperiencia: row.ambito_experiencia,
+        fundamentacion: row.fundamentacion,
+        categoria: row.categoria,
+        imagenUrl: row.imagen_url,
+        actividades: actResult.rows,
+        materiales: matResult.rows,
+        adaptaciones: adpResult.rows,
+        createdAt: row.created_at,
+      };
+
+      res.status(200).json({ data: planificacion });
+    } catch (error) {
+      console.error('Planificacion get error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
 });
 
 /**

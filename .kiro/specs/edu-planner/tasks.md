@@ -203,7 +203,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - **Property 10: PDF filename format and length constraint**
     - **Validates: Requirements 6.1, 6.6**
 
-- [ ] 10. Implement History screen
+- [x] 10. Implement History screen
   - [x] 10.1 Implement backend endpoint for planificaciones listing with filters
     - Create GET `/api/planificaciones` with `?filtro=recientes|efemerides|proyectos` query param
     - Order by created_at descending by default
@@ -211,7 +211,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Return planificación summaries with truncated description (80 chars max)
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [ ] 10.2 Implement HistoryScreen with grid, cards and filters
+  - [x] 10.2 Implement HistoryScreen with grid, cards and filters
     - Create responsive grid (3 columns desktop, 1 column mobile)
     - Create PlanCard with: image, date badge, title, truncated description (80 chars), category chips, "Ver" and "Re-Imprimir" buttons
     - Implement FilterChips: "Recientes", "Efemérides", "Proyectos"
