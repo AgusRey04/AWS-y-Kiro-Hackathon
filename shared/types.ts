@@ -17,7 +17,7 @@ export interface Planificacion {
   areaCurricular: string;
   ambitoExperiencia: string;
   fundamentacion: string;
-  categoria: 'recientes' | 'efemerides' | 'proyectos';
+  categoria: 'recientes' | 'efemerides' | 'proyectos' | 'archivado';
   imagenUrl?: string;
   actividades: Actividad[];
   materiales: Material[];

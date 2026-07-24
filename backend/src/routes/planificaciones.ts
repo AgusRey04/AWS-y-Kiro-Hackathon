@@ -93,7 +93,7 @@ planificacionesRoutes.get('/', async (req: Request, res: Response) => {
       const filtro = req.query.filtro as string | undefined;
 
       // Validate filtro param if provided
-      const validFiltros = ['recientes', 'efemerides', 'proyectos'];
+      const validFiltros = ['recientes', 'efemerides', 'proyectos', 'archivado'];
       if (filtro && !validFiltros.includes(filtro)) {
         res.status(400).json({
           code: ApiErrorCode.VALIDATION_ERROR,
@@ -106,8 +106,18 @@ planificacionesRoutes.get('/', async (req: Request, res: Response) => {
       let sql: string;
       let params: (string | undefined)[];
 
-      if (filtro && filtro !== 'recientes') {
-        // Filter by categoria for efemerides and proyectos
+      if (filtro === 'archivado') {
+        // Show only archived
+        sql = `
+          SELECT id, titulo, consigna_original, fecha_inicio, fecha_fin,
+                 categoria, imagen_url, created_at
+          FROM planificacion
+          WHERE usuario_id = $1 AND categoria = 'archivado'
+          ORDER BY created_at DESC
+        `;
+        params = [user.id];
+      } else if (filtro && filtro !== 'recientes') {
+        // Filter by categoria for efemerides and proyectos (exclude archived)
         sql = `
           SELECT id, titulo, consigna_original, fecha_inicio, fecha_fin,
                  categoria, imagen_url, created_at
@@ -117,12 +127,12 @@ planificacionesRoutes.get('/', async (req: Request, res: Response) => {
         `;
         params = [user.id, filtro];
       } else {
-        // Default / recientes: all planificaciones ordered by created_at DESC
+        // Default / recientes: all non-archived planificaciones
         sql = `
           SELECT id, titulo, consigna_original, fecha_inicio, fecha_fin,
                  categoria, imagen_url, created_at
           FROM planificacion
-          WHERE usuario_id = $1
+          WHERE usuario_id = $1 AND categoria != 'archivado'
           ORDER BY created_at DESC
         `;
         params = [user.id];
@@ -262,6 +272,51 @@ planificacionesRoutes.get('/:id', async (req: Request, res: Response) => {
       res.status(200).json({ data: planificacion });
     } catch (error) {
       console.error('Planificacion get error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
+});
+
+/**
+ * PATCH /api/planificaciones/:id/archivar
+ * Toggle archive status: archiva si está activa, desarchiva si está archivada.
+ */
+planificacionesRoutes.patch('/:id/archivar', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const { id } = req.params;
+
+      // Get current categoria
+      const planResult = await query(
+        'SELECT id, categoria FROM planificacion WHERE id = $1 AND usuario_id = $2',
+        [id, user.id]
+      );
+
+      if (planResult.rows.length === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Planificación no encontrada.',
+        });
+        return;
+      }
+
+      const currentCategoria = (planResult.rows[0] as { categoria: string }).categoria;
+      const newCategoria = currentCategoria === 'archivado' ? 'recientes' : 'archivado';
+
+      await query(
+        'UPDATE planificacion SET categoria = $1, updated_at = NOW() WHERE id = $2',
+        [newCategoria, id]
+      );
+
+      res.status(200).json({
+        data: { id, categoria: newCategoria, archivado: newCategoria === 'archivado' },
+      });
+    } catch (error) {
+      console.error('Planificacion archive error:', error);
       res.status(500).json({
         code: ApiErrorCode.INTERNAL_ERROR,
         message: 'Error interno del servidor',
@@ -414,6 +469,42 @@ planificacionesRoutes.patch('/:id', async (req: Request, res: Response) => {
   });
 });
 
-planificacionesRoutes.delete('/:id', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
+/**
+ * DELETE /api/planificaciones/:id
+ * Delete a planificación and all related data.
+ */
+planificacionesRoutes.delete('/:id', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const { id } = req.params;
+
+      // Delete related data first (foreign keys)
+      await query('DELETE FROM actividad WHERE planificacion_id = $1', [id]);
+      await query('DELETE FROM material WHERE planificacion_id = $1', [id]);
+      await query('DELETE FROM adaptacion WHERE planificacion_id = $1', [id]);
+
+      // Delete planificación
+      const result = await query(
+        'DELETE FROM planificacion WHERE id = $1 AND usuario_id = $2',
+        [id, user.id]
+      );
+
+      if (result.rowCount === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Planificación no encontrada.',
+        });
+        return;
+      }
+
+      res.status(200).json({ data: { success: true } });
+    } catch (error) {
+      console.error('Planificacion delete error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
 });
