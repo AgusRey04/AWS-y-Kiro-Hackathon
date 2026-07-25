@@ -220,7 +220,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Show empty state with descriptive message and navigation button to Home
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9_
 
-  - [ ]* 10.3 Write property tests for history
+  - [x] 10.3 Write property tests for history
     - **Property 11: History card content completeness**
     - **Property 12: History ordering and filtering**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**

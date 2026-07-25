@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { truncarDescripcion } from '../utils/history';
 
 // --- Types ---
 
-interface PlanificacionSummary {
+export interface PlanificacionSummary {
   id: string;
   titulo: string;
   descripcion: string;
@@ -73,7 +74,7 @@ function FilterChips({
 
 // --- PlanCard component ---
 
-function PlanCard({
+export function PlanCard({
   plan,
   onVer,
   onArchivar,
@@ -97,7 +98,10 @@ function PlanCard({
   return (
     <article className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden flex flex-col">
       {/* Image */}
-      <div className="h-32 bg-gradient-to-br from-green-primary/20 to-mostaza/20 flex items-center justify-center">
+      <div
+        data-testid="plan-card-imagen"
+        className="h-32 bg-gradient-to-br from-green-primary/20 to-mostaza/20 flex items-center justify-center"
+      >
         {plan.imagenUrl ? (
           <img
             src={plan.imagenUrl}
@@ -112,23 +116,33 @@ function PlanCard({
       {/* Content */}
       <div className="p-4 flex flex-col flex-1">
         {/* Date badge */}
-        <span className="inline-block text-xs font-medium text-text-muted bg-gray-100 rounded-full px-2 py-0.5 w-fit mb-2">
+        <span
+          data-testid="plan-card-fecha"
+          className="inline-block text-xs font-medium text-text-muted bg-gray-100 rounded-full px-2 py-0.5 w-fit mb-2"
+        >
           {plan.fechaInicio ? formatDate(plan.fechaInicio) : formatDate(plan.createdAt)}
         </span>
 
         {/* Title */}
-        <h3 className="text-base font-bold font-quicksand text-text-dark mb-1 line-clamp-2">
+        <h3
+          data-testid="plan-card-titulo"
+          className="text-base font-bold font-quicksand text-text-dark mb-1 line-clamp-2"
+        >
           {plan.titulo}
         </h3>
 
-        {/* Description */}
-        <p className="text-sm text-text-muted font-quicksand mb-3 flex-1">
-          {plan.descripcion}
+        {/* Description (máx. 80 caracteres visibles - Req 7.1) */}
+        <p
+          data-testid="plan-card-descripcion"
+          className="text-sm text-text-muted font-quicksand mb-3 flex-1"
+        >
+          {truncarDescripcion(plan.descripcion)}
         </p>
 
         {/* Category chip */}
         <div className="mb-3">
           <span
+            data-testid="plan-card-categoria"
             className={`inline-block text-xs font-medium rounded-full px-3 py-1 ${categoryColor.bg} ${categoryColor.text}`}
           >
             {categoryLabel}
