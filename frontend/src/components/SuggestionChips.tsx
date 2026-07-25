@@ -13,9 +13,9 @@ export default function SuggestionChips({ chips, onChipSelect }: SuggestionChips
 
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="Sugerencias de consigna">
-      {visibleChips.map((chip) => (
+      {visibleChips.map((chip, index) => (
         <button
-          key={chip}
+          key={`${index}-${chip}`}
           type="button"
           onClick={() => onChipSelect(chip)}
           className="bg-gray-100 text-text-dark rounded-full px-4 py-2 min-h-[40px] text-sm font-medium font-quicksand transition-colors hover:bg-gray-200 active:scale-95"
