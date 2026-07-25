@@ -198,7 +198,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Ensure PDF generation is fully client-side (no server dependency)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-  - [ ]* 9.2 Write property tests for PDF generation
+  - [x] 9.2 Write property tests for PDF generation
     - **Property 9: PDF content completeness**
     - **Property 10: PDF filename format and length constraint**
     - **Validates: Requirements 6.1, 6.6**
