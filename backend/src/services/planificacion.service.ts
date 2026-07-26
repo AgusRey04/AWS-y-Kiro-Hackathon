@@ -24,6 +24,17 @@ export class PlanificacionServiceError extends Error {
 }
 
 /**
+ * Normaliza la semana de una actividad: entero >= 1. Cualquier valor ausente o
+ * inválido cae en la semana 1 (compatible con planificaciones de una sola semana).
+ */
+export function normalizarSemana(valor: unknown): number {
+  const numero = typeof valor === 'number' ? valor : Number(valor);
+  if (!Number.isFinite(numero)) return 1;
+  const entero = Math.trunc(numero);
+  return entero >= 1 ? entero : 1;
+}
+
+/**
  * Determine the category for the planificación based on nearby ephemerides.
  */
 function determinarCategoria(fecha: Date): 'recientes' | 'efemerides' | 'proyectos' {
@@ -97,13 +108,15 @@ export async function crear(
     const actividades: Actividad[] = [];
     for (let i = 0; i < respuesta.actividades.length; i++) {
       const act = respuesta.actividades[i];
+      const semana = normalizarSemana(act.semana);
       const actResult = await client.query<{ id: string }>(
-        `INSERT INTO actividad (planificacion_id, dia, titulo, descripcion, orden)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [planificacionId, act.dia, act.titulo, act.descripcion, i + 1]
+        `INSERT INTO actividad (planificacion_id, semana, dia, titulo, descripcion, orden)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [planificacionId, semana, act.dia, act.titulo, act.descripcion, i + 1]
       );
       actividades.push({
         id: actResult.rows[0].id,
+        semana,
         dia: act.dia,
         titulo: act.titulo,
         descripcion: act.descripcion,

@@ -123,6 +123,7 @@ const responseSchema: ResponseSchema = {
       items: {
         type: SchemaType.OBJECT,
         properties: {
+          semana: { type: SchemaType.INTEGER, description: 'Número de semana de la planificación, empezando en 1' },
           dia: { type: SchemaType.STRING, description: 'Día de la semana: lunes, martes, miercoles, jueves o viernes' },
           titulo: { type: SchemaType.STRING, description: 'Título de la actividad' },
           descripcion: { type: SchemaType.STRING, description: 'Descripción detallada de la actividad' },

@@ -320,3 +320,437 @@ describe('GET /api/planificaciones', () => {
     expect(res.body.code).toBe('INTERNAL_ERROR');
   });
 });
+
+// Helper con soporte de body JSON para requests POST/PATCH
+async function requestWithBody(
+  app: express.Express,
+  method: string,
+  path: string,
+  body: unknown,
+  headers: Record<string, string> = {}
+) {
+  return new Promise<{ status: number; body: any }>((resolve) => {
+    const server = createServer(app);
+    server.listen(0, () => {
+      const addr = server.address() as { port: number };
+      const url = `http://localhost:${addr.port}${path}`;
+      fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }).then(async (res) => {
+        const responseBody = await res.json();
+        server.close();
+        resolve({ status: res.status, body: responseBody });
+      });
+    });
+  });
+}
+
+describe('POST /api/planificaciones/:id/actividades', () => {
+  const validToken = 'Bearer valid-token';
+  const userId = 'user-uuid-123';
+  const planId = 'plan-uuid-1';
+  const endpoint = `/api/planificaciones/${planId}/actividades`;
+
+  const validBody = {
+    dia: 'viernes',
+    semana: 2,
+    titulo: 'Kermesse del Movimiento para Calentar el Cuerpo',
+    descripcion: 'Organizaremos una serie de postas lúdicas con juegos motores.',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockResolvedValue({
+      success: true,
+      data: { id: userId },
+    } as any);
+  });
+
+  function mockOwnershipOkAndInsert(orden: number, overrides: Record<string, unknown> = {}) {
+    // 1) ownership check
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    // 2) next orden
+    mockQuery.mockResolvedValueOnce({ rows: [{ siguiente: orden }], rowCount: 1 } as any);
+    // 3) insert
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: 'act-uuid-nueva',
+        semana: validBody.semana,
+        dia: validBody.dia,
+        titulo: validBody.titulo,
+        descripcion: validBody.descripcion,
+        orden,
+        ...overrides,
+      }],
+      rowCount: 1,
+    } as any);
+  }
+
+  it('should return 401 when no token is provided', async () => {
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody);
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('should return 401 when token is invalid', async () => {
+    mockVerifyToken.mockResolvedValueOnce({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Token inválido' },
+    } as any);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: 'Bearer invalid-token',
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('should create the actividad and return it with its DB id (happy path)', async () => {
+    mockOwnershipOkAndInsert(3);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data).toEqual({
+      id: 'act-uuid-nueva',
+      semana: 2,
+      dia: 'viernes',
+      titulo: validBody.titulo,
+      descripcion: validBody.descripcion,
+      orden: 3,
+    });
+
+    // Ownership validado por usuario_id
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('WHERE id = $1 AND usuario_id = $2'),
+      [planId, userId]
+    );
+
+    // orden calculado como el siguiente de esa semana + día
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('COALESCE(MAX(orden), 0) + 1'),
+      [planId, 2, 'viernes']
+    );
+
+    // insert parametrizado con la semana y el orden calculado
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO actividad'),
+      [planId, 2, 'viernes', validBody.titulo, validBody.descripcion, 3]
+    );
+  });
+
+  it('should use orden 1 when the day has no activities yet', async () => {
+    mockOwnershipOkAndInsert(1);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.orden).toBe(1);
+  });
+
+  it('should trim titulo and descripcion before inserting', async () => {
+    mockOwnershipOkAndInsert(1);
+
+    const app = createApp();
+    await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { dia: 'lunes', semana: 1, titulo: '  Titulo  ', descripcion: '  Desc  ' },
+      { Authorization: validToken }
+    );
+
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO actividad'),
+      [planId, 1, 'lunes', 'Titulo', 'Desc', 1]
+    );
+  });
+
+  it.each(['sabado', 'domingo', 'Lunes', '', 'lunes ', 'miércoles'])(
+    'should return 400 when dia is invalid: %s',
+    async (dia) => {
+      const app = createApp();
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { ...validBody, dia },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(mockQuery).not.toHaveBeenCalled();
+    }
+  );
+
+  it('should accept all five valid days', async () => {
+    const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+
+    for (const dia of dias) {
+      vi.clearAllMocks();
+      mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+      mockOwnershipOkAndInsert(1, { dia });
+
+      const app = createApp();
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { ...validBody, dia },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.dia).toBe(dia);
+    }
+  });
+
+  it('should return 400 when dia is missing', async () => {
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { titulo: 'T', descripcion: 'D' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+
+  // --- Semana ---
+
+  it('should default semana to 1 when it is not provided', async () => {
+    mockOwnershipOkAndInsert(1, { semana: 1 });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { dia: 'lunes', titulo: 'Titulo', descripcion: 'Desc' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.semana).toBe(1);
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO actividad'),
+      [planId, 1, 'lunes', 'Titulo', 'Desc', 1]
+    );
+  });
+
+  it.each([1, 2, 3, 12])('should accept semana %s (integer >= 1)', async (semana) => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+    mockOwnershipOkAndInsert(1, { semana });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { ...validBody, semana },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.semana).toBe(semana);
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('semana = $2'),
+      [planId, semana, validBody.dia]
+    );
+  });
+
+  it.each([[0], [-1], [1.5], ['dos'], [''.padEnd(3, ' ')], [true], [[]], [{}]])(
+    'should return 400 when semana is invalid: %s',
+    async (semana: unknown) => {
+      vi.clearAllMocks();
+      mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+
+      const app = createApp();
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { ...validBody, semana },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(res.body.message).toContain('semana');
+      expect(mockQuery).not.toHaveBeenCalled();
+    }
+  );
+
+  it('should isolate orden per semana (same day, different weeks)', async () => {
+    mockOwnershipOkAndInsert(1, { semana: 3 });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { ...validBody, semana: 3 },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+    // El cálculo del orden se restringe a la semana y el día elegidos
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('semana = $2 AND dia = $3'),
+      [planId, 3, validBody.dia]
+    );
+  });
+
+  it('should return 400 when titulo is missing or empty', async () => {
+    const app = createApp();
+
+    for (const titulo of [undefined, '', '   ']) {
+      vi.clearAllMocks();
+      mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { dia: 'lunes', titulo, descripcion: 'Desc' },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(mockQuery).not.toHaveBeenCalled();
+    }
+  });
+
+  it('should return 400 when titulo exceeds 500 characters', async () => {
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { dia: 'lunes', titulo: 'A'.repeat(501), descripcion: 'Desc' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.message).toContain('500 caracteres');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should accept titulo of exactly 500 characters', async () => {
+    mockOwnershipOkAndInsert(1, { titulo: 'A'.repeat(500) });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { dia: 'lunes', titulo: 'A'.repeat(500), descripcion: 'Desc' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+  });
+
+  it('should return 400 when descripcion is missing or empty', async () => {
+    const app = createApp();
+
+    for (const descripcion of [undefined, '', '   ']) {
+      vi.clearAllMocks();
+      mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { dia: 'lunes', titulo: 'Titulo', descripcion },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(mockQuery).not.toHaveBeenCalled();
+    }
+  });
+
+  it('should return 400 when descripcion exceeds 2000 characters', async () => {
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { dia: 'lunes', titulo: 'Titulo', descripcion: 'B'.repeat(2001) },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.message).toContain('2000 caracteres');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should accept descripcion of exactly 2000 characters', async () => {
+    mockOwnershipOkAndInsert(1, { descripcion: 'B'.repeat(2000) });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { dia: 'lunes', titulo: 'Titulo', descripcion: 'B'.repeat(2000) },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+  });
+
+  it('should return 404 when the planificación belongs to another user', async () => {
+    // Ownership check devuelve vacío
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+    expect(res.body.message).toBe('Planificación no encontrada.');
+    // No debe insertar nada
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return 500 when the database fails', async () => {
+    mockQuery.mockRejectedValueOnce(new Error('DB connection lost'));
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(500);
+    expect(res.body.code).toBe('INTERNAL_ERROR');
+  });
+});

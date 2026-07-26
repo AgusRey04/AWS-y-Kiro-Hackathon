@@ -27,7 +27,7 @@ const mockPlanificacion = {
   fundamentacion: 'Marco teórico de la planificación.',
   categoria: 'recientes' as const,
   actividades: [
-    { id: '1', dia: 'lunes' as const, titulo: 'Paseo por el patio', descripcion: 'Desc', orden: 1 },
+    { id: '1', semana: 1, dia: 'lunes' as const, titulo: 'Paseo por el patio', descripcion: 'Desc', orden: 1 },
   ],
   materiales: [
     { id: '1', nombre: 'Hojas secas', icono: '🍂', orden: 1 },

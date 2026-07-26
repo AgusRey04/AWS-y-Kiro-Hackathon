@@ -20,6 +20,7 @@ const mockPlanificacion: Planificacion = {
   actividades: [
     {
       id: 'a1',
+      semana: 1,
       dia: 'lunes',
       titulo: 'Paseo recolector',
       descripcion: 'Recorrido por el patio para recolectar hojas secas.',
@@ -27,6 +28,7 @@ const mockPlanificacion: Planificacion = {
     },
     {
       id: 'a2',
+      semana: 1,
       dia: 'martes',
       titulo: 'Collage de hojas',
       descripcion: 'Crear un collage con las hojas recolectadas.',
@@ -34,6 +36,7 @@ const mockPlanificacion: Planificacion = {
     },
     {
       id: 'a3',
+      semana: 1,
       dia: 'miercoles',
       titulo: 'Colores del otoño',
       descripcion: 'Pintar con témperas los colores cálidos del otoño.',
@@ -41,6 +44,7 @@ const mockPlanificacion: Planificacion = {
     },
     {
       id: 'a4',
+      semana: 1,
       dia: 'jueves',
       titulo: 'Cuento sobre el otoño',
       descripcion: 'Lectura de un cuento relacionado con la estación.',
@@ -48,6 +52,7 @@ const mockPlanificacion: Planificacion = {
     },
     {
       id: 'a5',
+      semana: 1,
       dia: 'viernes',
       titulo: 'Cierre con música',
       descripcion: 'Canción y baile sobre el viento y las hojas.',
@@ -124,6 +129,7 @@ describe('generatePdf', () => {
     for (let i = 0; i < 20; i++) {
       manyActivities.push({
         id: `act-${i}`,
+        semana: Math.floor(i / 5) + 1,
         dia: (['lunes', 'martes', 'miercoles', 'jueves', 'viernes'] as const)[i % 5],
         titulo: `Actividad número ${i + 1}`,
         descripcion: 'Descripción extensa de la actividad. '.repeat(10),
@@ -138,6 +144,27 @@ describe('generatePdf', () => {
 
     const doc = generatePdf(largePlan);
     expect(doc.getNumberOfPages()).toBeGreaterThan(1);
+  });
+
+  it('genera PDF con actividades de varias semanas', () => {
+    const multiSemana: Planificacion = {
+      ...mockPlanificacion,
+      actividades: [
+        ...mockPlanificacion.actividades,
+        {
+          id: 'a6',
+          semana: 2,
+          dia: 'lunes',
+          titulo: 'Arranque de la segunda semana',
+          descripcion: 'Retomamos lo trabajado en la semana anterior.',
+          orden: 1,
+        },
+      ],
+    };
+
+    const doc = generatePdf(multiSemana);
+    expect(doc).toBeDefined();
+    expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(1);
   });
 
   it('maneja planificación con listas vacías', () => {
