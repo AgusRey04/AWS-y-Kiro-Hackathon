@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import ConsignaInput from './ConsignaInput';
 import SuggestionChips from './SuggestionChips';
 import { getDefaultSuggestions, getSeasonByMonth } from '../utils/suggestions';
+import { insertChip } from '../utils/consigna';
 
 /**
  * Feature: edu-planner
@@ -26,19 +26,6 @@ function handleChangeLogic(newValue: string, maxLength: number): string | null {
     return newValue;
   }
   return null; // rejected
-}
-
-function handleChipSelectLogic(
-  currentValue: string,
-  chip: string,
-  maxLength: number
-): string {
-  if (currentValue.length === 0) {
-    return chip.slice(0, maxLength);
-  } else {
-    const appended = currentValue + ' ' + chip;
-    return appended.slice(0, maxLength);
-  }
 }
 
 // --- Property Tests ---
@@ -99,11 +86,7 @@ describe('Feature: edu-planner, Property 2: Text input character limit and count
       fc.property(textLengthArb, (length) => {
         const text = 'a'.repeat(length);
         const { unmount } = render(
-          <ConsignaInput
-            value={text}
-            onChange={vi.fn()}
-            suggestions={['Chip A', 'Chip B']}
-          />
+          <ConsignaInput value={text} onChange={vi.fn()} />
         );
 
         const counterRegex = /\/500/;
@@ -141,14 +124,23 @@ describe('Feature: edu-planner, Property 3: Suggestion chip insertion semantics'
    * result in the field containing exactly the chip text (if the field was empty) or
    * the existing text followed by a space followed by the chip text (if the field was
    * non-empty), with the total never exceeding 500 characters.
+   *
+   * NOTE: ConsignaInput no longer renders suggestion chips (that responsibility moved
+   * to HomePage, which shows the long-form suggestions fetched from the backend). The
+   * insertion logic that used to live in ConsignaInput.handleChipSelect was extracted
+   * to the pure function `insertChip` in `../utils/consigna.ts`, which is now used by
+   * `HomePage.handleChipSelect`. These tests exercise that pure function directly
+   * instead of rendering a component, since Property 3 is about the insertion
+   * semantics, not about which component triggers them.
    */
 
-  it('when field is empty, result equals chip text truncated to 500 chars', () => {
+  it('insertChip: empty (or blank) field sets consigna to the chip text, truncated to 500', () => {
     const chipArb = fc.string({ minLength: 1, maxLength: 600 });
+    const blankArb = fc.string({ unit: fc.constantFrom(' ', '\t', '\n'), minLength: 0, maxLength: 10 });
 
     fc.assert(
-      fc.property(chipArb, (chip) => {
-        const result = handleChipSelectLogic('', chip, MAX_LENGTH);
+      fc.property(blankArb, chipArb, (blank, chip) => {
+        const result = insertChip(blank, chip);
         const expected = chip.slice(0, MAX_LENGTH);
         expect(result).toBe(expected);
         expect(result.length).toBeLessThanOrEqual(MAX_LENGTH);
@@ -157,15 +149,14 @@ describe('Feature: edu-planner, Property 3: Suggestion chip insertion semantics'
     );
   });
 
-  it('when field is non-empty, result equals existing + space + chip, truncated to 500', () => {
-    const existingArb = fc.string({ minLength: 1, maxLength: 400 });
+  it('insertChip: non-empty field appends the chip after a single space, truncated to 500', () => {
+    const existingArb = fc.string({ minLength: 1, maxLength: 400 }).filter((s) => s.trim().length > 0);
     const chipArb = fc.string({ minLength: 1, maxLength: 200 });
 
     fc.assert(
       fc.property(existingArb, chipArb, (existing, chip) => {
-        const result = handleChipSelectLogic(existing, chip, MAX_LENGTH);
-        const expectedFull = existing + ' ' + chip;
-        const expected = expectedFull.slice(0, MAX_LENGTH);
+        const result = insertChip(existing, chip);
+        const expected = (existing + ' ' + chip).slice(0, MAX_LENGTH);
         expect(result).toBe(expected);
         expect(result.length).toBeLessThanOrEqual(MAX_LENGTH);
       }),
@@ -173,74 +164,18 @@ describe('Feature: edu-planner, Property 3: Suggestion chip insertion semantics'
     );
   });
 
-  it('result NEVER exceeds 500 characters regardless of inputs', () => {
+  it('insertChip: result never exceeds 500 characters regardless of inputs', () => {
     const existingArb = fc.string({ minLength: 0, maxLength: 500 });
     const chipArb = fc.string({ minLength: 0, maxLength: 500 });
 
     fc.assert(
       fc.property(existingArb, chipArb, (existing, chip) => {
-        const result = handleChipSelectLogic(existing, chip, MAX_LENGTH);
+        const result = insertChip(existing, chip);
         expect(result.length).toBeLessThanOrEqual(MAX_LENGTH);
       }),
       { numRuns: 200 }
     );
   });
-
-  it('chip insertion via component: empty field sets chip text', async () => {
-    // Generate unique chip texts to avoid React key collisions
-    const chipTextsArb = fc.uniqueArray(
-      fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
-      { minLength: 2, maxLength: 5 }
-    );
-
-    await fc.assert(
-      fc.asyncProperty(chipTextsArb, async (chips) => {
-        const onChange = vi.fn();
-        const { unmount } = render(
-          <ConsignaInput value="" onChange={onChange} suggestions={chips} />
-        );
-
-        const firstChipButton = screen.getAllByRole('button')[0];
-        await userEvent.click(firstChipButton);
-
-        expect(onChange).toHaveBeenCalledWith(chips[0].slice(0, MAX_LENGTH));
-
-        unmount();
-        onChange.mockClear();
-      }),
-      { numRuns: 100 }
-    );
-  }, 120000);
-
-  it('chip insertion via component: non-empty field appends with space', async () => {
-    const existingTextArb = fc.string({ minLength: 1, maxLength: 100 }).filter(
-      (s) => s.trim().length > 0
-    );
-    // Generate unique chip texts to avoid React key collisions
-    const chipTextsArb = fc.uniqueArray(
-      fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
-      { minLength: 2, maxLength: 5 }
-    );
-
-    await fc.assert(
-      fc.asyncProperty(existingTextArb, chipTextsArb, async (existing, chips) => {
-        const onChange = vi.fn();
-        const { unmount } = render(
-          <ConsignaInput value={existing} onChange={onChange} suggestions={chips} />
-        );
-
-        const firstChipButton = screen.getAllByRole('button')[0];
-        await userEvent.click(firstChipButton);
-
-        const expected = (existing + ' ' + chips[0]).slice(0, MAX_LENGTH);
-        expect(onChange).toHaveBeenCalledWith(expected);
-
-        unmount();
-        onChange.mockClear();
-      }),
-      { numRuns: 100 }
-    );
-  }, 120000);
 });
 
 describe('Feature: edu-planner, Property 18: Suggestion chip count bounds', () => {

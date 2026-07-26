@@ -9,6 +9,7 @@ import SuggestionChips from '../components/SuggestionChips';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
 import { fetchSuggestionChips } from '../services/suggestion.service';
+import { insertChip } from '../utils/consigna';
 
 export default function HomePage() {
   const { state } = useAuth();
@@ -27,11 +28,7 @@ export default function HomePage() {
   }, []);
 
   const handleChipSelect = useCallback((chip: string) => {
-    setConsigna((prev) => {
-      if (prev.trim() === '') return chip.slice(0, 500);
-      const combined = prev + ' ' + chip;
-      return combined.slice(0, 500);
-    });
+    setConsigna((prev) => insertChip(prev, chip));
     setValidationError(null);
   }, []);
 
