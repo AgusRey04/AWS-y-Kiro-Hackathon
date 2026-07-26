@@ -1,0 +1,241 @@
+import { useEffect } from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import ActividadesTab from './ActividadesTab';
+import { PlanProvider, usePlan } from '../contexts/PlanContext';
+import { server } from '../test/mocks/server';
+
+/**
+ * Integración: botón único "Agregar actividad" + formulario + PlanContext + endpoint
+ * POST /api/planificaciones/:id/actividades (mockeado con MSW).
+ */
+
+const PLAN_ID = 'plan-1';
+
+const MOCK_PLAN = {
+  id: PLAN_ID,
+  titulo: 'Semana del movimiento',
+  consignaOriginal: 'Trabajar el movimiento',
+  fechaInicio: '2024-06-10',
+  fechaFin: '2024-06-14',
+  objetivos: ['Explorar el cuerpo'],
+  areaCurricular: 'Educación Física',
+  ambitoExperiencia: 'Juego',
+  fundamentacion: 'Fundamentación.',
+  categoria: 'recientes' as const,
+  actividades: [
+    { id: 'act-1', dia: 'lunes', titulo: 'Ronda inicial', descripcion: 'Presentación', orden: 1 },
+  ],
+  materiales: [],
+  adaptaciones: [],
+  createdAt: '2024-06-09T10:00:00Z',
+};
+
+function Harness() {
+  const { planificacion, loadById } = usePlan();
+
+  useEffect(() => {
+    loadById(PLAN_ID);
+  }, [loadById]);
+
+  if (!planificacion) return <p>Cargando…</p>;
+
+  return (
+    <ActividadesTab
+      actividades={planificacion.actividades}
+      planificacionId={planificacion.id}
+    />
+  );
+}
+
+function renderHarness() {
+  return render(
+    <MemoryRouter>
+      <PlanProvider>
+        <Harness />
+      </PlanProvider>
+    </MemoryRouter>
+  );
+}
+
+async function abrirFormularioYCompletar(
+  user: ReturnType<typeof userEvent.setup>,
+  dia: string,
+  titulo: string,
+  descripcion: string
+) {
+  await user.click(screen.getByRole('button', { name: 'Agregar actividad' }));
+  await user.selectOptions(screen.getByLabelText('Día'), dia);
+  await user.type(screen.getByLabelText('Título'), titulo);
+  await user.type(screen.getByLabelText('Descripción'), descripcion);
+  await user.click(screen.getByRole('button', { name: 'Agregar' }));
+}
+
+describe('ActividadesTab + PlanContext (integración con MSW)', () => {
+  beforeEach(() => {
+    localStorage.setItem('token', 'token-de-prueba');
+    server.use(
+      http.get(`/api/planificaciones/${PLAN_ID}`, () => HttpResponse.json({ data: MOCK_PLAN }))
+    );
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('crea la actividad vía endpoint y la muestra en la DayCard del día elegido', async () => {
+    let bodyRecibido: unknown = null;
+    let authRecibido: string | null = null;
+
+    server.use(
+      http.post(`/api/planificaciones/${PLAN_ID}/actividades`, async ({ request }) => {
+        bodyRecibido = await request.json();
+        authRecibido = request.headers.get('Authorization');
+        return HttpResponse.json(
+          {
+            data: {
+              id: 'act-db-99',
+              dia: 'viernes',
+              titulo: 'Kermesse del Movimiento',
+              descripcion: 'Postas lúdicas con juegos motores',
+              orden: 1,
+            },
+          },
+          { status: 201 }
+        );
+      })
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+
+    // El viernes todavía no tiene DayCard
+    expect(screen.queryByLabelText('Actividades del Viernes')).not.toBeInTheDocument();
+
+    await abrirFormularioYCompletar(
+      user,
+      'viernes',
+      'Kermesse del Movimiento',
+      'Postas lúdicas con juegos motores'
+    );
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    // La DayCard del viernes ahora existe y contiene la actividad nueva
+    const cards = screen.getAllByRole('listitem');
+    expect(cards.map((c) => c.getAttribute('aria-label'))).toEqual([
+      'Actividades del Lunes',
+      'Actividades del Viernes',
+    ]);
+    expect(cards[1].textContent).toContain('Kermesse del Movimiento');
+    expect(cards[1].textContent).toContain('Postas lúdicas con juegos motores');
+
+    expect(bodyRecibido).toEqual({
+      dia: 'viernes',
+      titulo: 'Kermesse del Movimiento',
+      descripcion: 'Postas lúdicas con juegos motores',
+    });
+    expect(authRecibido).toBe('Bearer token-de-prueba');
+  });
+
+  it('agrega la actividad al final del día cuando el día ya tenía actividades', async () => {
+    server.use(
+      http.post(`/api/planificaciones/${PLAN_ID}/actividades`, () =>
+        HttpResponse.json(
+          {
+            data: {
+              id: 'act-db-2',
+              dia: 'lunes',
+              titulo: 'Cierre del lunes',
+              descripcion: 'Reflexión grupal',
+              orden: 2,
+            },
+          },
+          { status: 201 }
+        )
+      )
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+
+    await abrirFormularioYCompletar(user, 'lunes', 'Cierre del lunes', 'Reflexión grupal');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    const cards = screen.getAllByRole('listitem');
+    expect(cards).toHaveLength(1);
+    const texto = cards[0].textContent ?? '';
+    expect(texto.indexOf('Ronda inicial')).toBeLessThan(texto.indexOf('Cierre del lunes'));
+  });
+
+  it('muestra el error del endpoint y no cierra el formulario', async () => {
+    server.use(
+      http.post(`/api/planificaciones/${PLAN_ID}/actividades`, () =>
+        HttpResponse.json(
+          { code: 'INTERNAL_ERROR', message: 'Error interno del servidor' },
+          { status: 500 }
+        )
+      )
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+
+    await abrirFormularioYCompletar(user, 'martes', 'Actividad nueva', 'Descripción nueva');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Error interno del servidor');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Actividades del Martes')).not.toBeInTheDocument();
+  });
+
+  it('permite reintentar y persistir después de un error del endpoint', async () => {
+    let llamadas = 0;
+    server.use(
+      http.post(`/api/planificaciones/${PLAN_ID}/actividades`, () => {
+        llamadas += 1;
+        if (llamadas === 1) {
+          return HttpResponse.json(
+            { code: 'INTERNAL_ERROR', message: 'Error interno del servidor' },
+            { status: 500 }
+          );
+        }
+        return HttpResponse.json(
+          {
+            data: {
+              id: 'act-db-3',
+              dia: 'martes',
+              titulo: 'Actividad nueva',
+              descripcion: 'Descripción nueva',
+              orden: 1,
+            },
+          },
+          { status: 201 }
+        );
+      })
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+
+    await abrirFormularioYCompletar(user, 'martes', 'Actividad nueva', 'Descripción nueva');
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByLabelText('Actividades del Martes')).toBeInTheDocument();
+    expect(llamadas).toBe(2);
+  });
+});

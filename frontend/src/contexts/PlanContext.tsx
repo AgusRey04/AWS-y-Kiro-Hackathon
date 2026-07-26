@@ -8,6 +8,14 @@ import {
 import { useNavigate } from 'react-router-dom';
 import type { Planificacion, Actividad, Material, Adaptacion, ApiErrorResponse } from '../types';
 
+// --- Tipos ---
+
+export interface NuevaActividadInput {
+  dia: Actividad['dia'];
+  titulo: string;
+  descripcion: string;
+}
+
 // --- Context Value ---
 
 interface PlanContextValue {
@@ -17,7 +25,7 @@ interface PlanContextValue {
   crear: (consigna: string) => Promise<void>;
   loadById: (id: string) => Promise<void>;
   updateField: (path: string, value: string) => Promise<void>;
-  addActividad: (dia: string) => void;
+  addActividad: (input: NuevaActividadInput) => Promise<Actividad>;
   addMaterial: () => void;
   addAdaptacion: () => void;
 }
@@ -161,23 +169,60 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     });
   }, [planificacion]);
 
-  const addActividad = useCallback((dia: string) => {
+  /**
+   * Crea una actividad en el backend y, con la respuesta, la agrega al estado local
+   * usando el id real de la base de datos (así las ediciones inline con PATCH funcionan).
+   * Lanza un Error si la llamada falla, para que el formulario pueda mostrarlo y reintentar.
+   */
+  const addActividad = useCallback(async (input: NuevaActividadInput): Promise<Actividad> => {
+    if (!planificacion) {
+      throw new Error('No hay una planificación activa.');
+    }
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    let res: Response;
+    try {
+      res = await fetch(`/api/planificaciones/${planificacion.id}/actividades`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          dia: input.dia,
+          titulo: input.titulo,
+          descripcion: input.descripcion,
+        }),
+      });
+    } catch {
+      throw new Error('No pudimos agregar la actividad. Revisá tu conexión y reintentá.');
+    }
+
+    if (!res.ok) {
+      let message = 'No pudimos agregar la actividad. ¿Querés reintentar?';
+      try {
+        const errorJson: ApiErrorResponse = await res.json();
+        if (errorJson?.message) message = errorJson.message;
+      } catch {
+        // Respuesta sin JSON: se usa el mensaje por defecto
+      }
+      throw new Error(message);
+    }
+
+    const json = await res.json();
+    const creada = (json.data?.actividad ?? json.data) as Actividad;
+
     setPlanificacion((prev) => {
       if (!prev) return prev;
-      const existingForDay = prev.actividades.filter((a) => a.dia === dia);
-      const newActividad: Actividad = {
-        id: crypto.randomUUID(),
-        dia: dia as Actividad['dia'],
-        titulo: '',
-        descripcion: '',
-        orden: existingForDay.length + 1,
-      };
       return {
         ...prev,
-        actividades: [...prev.actividades, newActividad],
+        actividades: [...prev.actividades, creada],
       };
     });
-  }, []);
+
+    return creada;
+  }, [planificacion]);
 
   const addMaterial = useCallback(() => {
     setPlanificacion((prev) => {

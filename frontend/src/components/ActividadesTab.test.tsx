@@ -1,7 +1,10 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ActividadesTab from './ActividadesTab';
 import type { Actividad } from '../types';
+
+const mockAddActividad = vi.fn().mockResolvedValue(undefined);
 
 // Mock PlanContext
 vi.mock('../contexts/PlanContext', () => ({
@@ -11,7 +14,7 @@ vi.mock('../contexts/PlanContext', () => ({
     error: null,
     crear: vi.fn(),
     updateField: vi.fn().mockResolvedValue(undefined),
-    addActividad: vi.fn(),
+    addActividad: mockAddActividad,
     addMaterial: vi.fn(),
     addAdaptacion: vi.fn(),
   }),
@@ -26,6 +29,11 @@ const mockActividades: Actividad[] = [
 ];
 
 describe('ActividadesTab', () => {
+  beforeEach(() => {
+    mockAddActividad.mockClear();
+    mockAddActividad.mockResolvedValue(undefined);
+  });
+
   it('muestra empty state cuando no hay actividades', () => {
     render(<ActividadesTab actividades={[]} />);
     expect(screen.getByText('No hay actividades disponibles para esta planificación.')).toBeInTheDocument();
@@ -78,5 +86,77 @@ describe('ActividadesTab', () => {
     render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
     const buttons = screen.getAllByText('+ Agregar actividad');
     expect(buttons.length).toBeGreaterThan(0);
+  });
+
+  it('muestra el botón Agregar actividad UNA SOLA VEZ aunque haya varios días', () => {
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+    expect(screen.getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getAllByRole('button', { name: 'Agregar actividad' })).toHaveLength(1);
+  });
+
+  it('no muestra botones de agregar dentro de las DayCards', () => {
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+    screen.getAllByRole('listitem').forEach((card) => {
+      expect(card.querySelector('button')).toBeNull();
+    });
+  });
+
+  it('no muestra el botón Agregar actividad en modo lectura (sin planificacionId)', () => {
+    render(<ActividadesTab actividades={mockActividades} />);
+    expect(screen.queryByRole('button', { name: 'Agregar actividad' })).not.toBeInTheDocument();
+  });
+
+  it('muestra el botón Agregar actividad también en el empty state', () => {
+    render(<ActividadesTab actividades={[]} planificacionId="plan-1" />);
+    expect(screen.getByRole('button', { name: 'Agregar actividad' })).toBeInTheDocument();
+  });
+
+  it('abre el formulario al presionar el botón y lo cierra al cancelar', async () => {
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Agregar actividad' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mockAddActividad).not.toHaveBeenCalled();
+  });
+
+  it('llama a addActividad con día, título y descripción y cierra el formulario', async () => {
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    await user.click(screen.getByRole('button', { name: 'Agregar actividad' }));
+    await user.selectOptions(screen.getByLabelText('Día'), 'viernes');
+    await user.type(screen.getByLabelText('Título'), 'Kermesse del Movimiento');
+    await user.type(screen.getByLabelText('Descripción'), 'Postas lúdicas con juegos motores');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    await waitFor(() =>
+      expect(mockAddActividad).toHaveBeenCalledWith({
+        dia: 'viernes',
+        titulo: 'Kermesse del Movimiento',
+        descripcion: 'Postas lúdicas con juegos motores',
+      })
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('mantiene el formulario abierto cuando addActividad falla', async () => {
+    mockAddActividad.mockRejectedValueOnce(new Error('Planificación no encontrada.'));
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    await user.click(screen.getByRole('button', { name: 'Agregar actividad' }));
+    await user.selectOptions(screen.getByLabelText('Día'), 'lunes');
+    await user.type(screen.getByLabelText('Título'), 'Nueva');
+    await user.type(screen.getByLabelText('Descripción'), 'Desc');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Planificación no encontrada.');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

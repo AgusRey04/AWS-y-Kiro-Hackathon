@@ -7,6 +7,9 @@ import { query } from '../db/index.js';
 
 export const planificacionesRoutes = Router();
 
+/** Días válidos para una actividad. */
+const DIAS_VALIDOS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+
 /**
  * Auth middleware: extracts user from JWT Bearer token.
  */
@@ -317,6 +320,105 @@ planificacionesRoutes.patch('/:id/archivar', async (req: Request, res: Response)
       });
     } catch (error) {
       console.error('Planificacion archive error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
+});
+
+/**
+ * POST /api/planificaciones/:id/actividades
+ * Create a single actividad inside an existing planificación.
+ * Body: { dia, titulo, descripcion }
+ * - dia must be one of lunes|martes|miercoles|jueves|viernes
+ * - titulo: required, max 500 chars
+ * - descripcion: required, max 2000 chars
+ * - orden is computed as the next one for that day within the planificación
+ */
+planificacionesRoutes.post('/:id/actividades', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const { id } = req.params;
+      const { dia, titulo, descripcion } = req.body ?? {};
+
+      if (!dia || typeof dia !== 'string' || !DIAS_VALIDOS.includes(dia)) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: `El día es requerido y debe ser uno de: ${DIAS_VALIDOS.join(', ')}.`,
+        });
+        return;
+      }
+
+      if (!titulo || typeof titulo !== 'string' || titulo.trim().length === 0) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'El título es requerido y debe ser texto.',
+        });
+        return;
+      }
+
+      if (titulo.length > 500) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'Los títulos no pueden superar los 500 caracteres.',
+        });
+        return;
+      }
+
+      if (!descripcion || typeof descripcion !== 'string' || descripcion.trim().length === 0) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'La descripción es requerida y debe ser texto.',
+        });
+        return;
+      }
+
+      if (descripcion.length > 2000) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'Las descripciones no pueden superar los 2000 caracteres.',
+        });
+        return;
+      }
+
+      // Verify planificación belongs to user
+      const planCheck = await query(
+        'SELECT id FROM planificacion WHERE id = $1 AND usuario_id = $2',
+        [id, user.id]
+      );
+
+      if (planCheck.rows.length === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Planificación no encontrada.',
+        });
+        return;
+      }
+
+      // Next orden for that day inside this planificación
+      const ordenResult = await query(
+        `SELECT COALESCE(MAX(orden), 0) + 1 AS siguiente
+         FROM actividad
+         WHERE planificacion_id = $1 AND dia = $2`,
+        [id, dia]
+      );
+
+      const siguiente = (ordenResult.rows[0] as { siguiente: number | string } | undefined)?.siguiente;
+      const orden = Number(siguiente) > 0 ? Number(siguiente) : 1;
+
+      const insertResult = await query(
+        `INSERT INTO actividad (planificacion_id, dia, titulo, descripcion, orden)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, dia, titulo, descripcion, orden`,
+        [id, dia, titulo.trim(), descripcion.trim(), orden]
+      );
+
+      res.status(201).json({ data: insertResult.rows[0] });
+    } catch (error) {
+      console.error('Actividad creation error:', error);
       res.status(500).json({
         code: ApiErrorCode.INTERNAL_ERROR,
         message: 'Error interno del servidor',

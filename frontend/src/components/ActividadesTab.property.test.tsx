@@ -188,3 +188,54 @@ describe('Feature: edu-planner, Property 6: Activities grouped and ordered by we
     );
   });
 });
+
+describe('Feature: edu-planner, Property 6 (extensión): botón único de agregar actividad', () => {
+  /**
+   * **Validates: Requirements 4.4**
+   *
+   * Para cualquier conjunto de actividades, la pestaña Actividades en modo edición
+   * SHALL renderizar exactamente un botón "Agregar actividad" (nunca uno por día),
+   * sin alterar el agrupamiento ni el orden lunes→viernes.
+   */
+
+  it('renders exactly one "Agregar actividad" button regardless of the activities set', () => {
+    fc.assert(
+      fc.property(actividadesArb, (actividades) => {
+        const { unmount } = render(
+          <ActividadesTab actividades={actividades} planificacionId="plan-1" />
+        );
+
+        expect(screen.getAllByRole('button', { name: 'Agregar actividad' })).toHaveLength(1);
+
+        unmount();
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('never renders add buttons inside day cards, and day order stays lunes→viernes', () => {
+    fc.assert(
+      fc.property(actividadesArb, (actividades) => {
+        const { unmount } = render(
+          <ActividadesTab actividades={actividades} planificacionId="plan-1" />
+        );
+
+        const cards = screen.queryAllByRole('listitem');
+        cards.forEach((card) => {
+          expect(card.querySelector('button')).toBeNull();
+        });
+
+        const indices = cards.map((card) =>
+          DIAS.findIndex(
+            (dia) => card.getAttribute('aria-label') === `Actividades del ${DIA_LABEL[dia]}`
+          )
+        );
+        expect(indices.every((i) => i >= 0)).toBe(true);
+        expect(indices).toEqual([...indices].sort((a, b) => a - b));
+
+        unmount();
+      }),
+      { numRuns: 100 }
+    );
+  });
+});

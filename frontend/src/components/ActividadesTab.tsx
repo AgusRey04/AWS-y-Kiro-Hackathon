@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { Actividad } from '../types';
 import { usePlan } from '../contexts/PlanContext';
 import EditableBlock from './EditableBlock';
+import AgregarActividadForm, { type NuevaActividadInput } from './AgregarActividadForm';
 
 const DAY_ORDER: Actividad['dia'][] = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
 
@@ -27,13 +29,37 @@ interface ActividadesTabProps {
 
 export default function ActividadesTab({ actividades, planificacionId }: ActividadesTabProps) {
   const { updateField, addActividad } = usePlan();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const handleSubmit = async (input: NuevaActividadInput) => {
+    await addActividad(input);
+    setIsFormOpen(false);
+  };
+
+  const agregarButton = planificacionId ? (
+    <button
+      onClick={() => setIsFormOpen(true)}
+      className="mt-4 w-full border-2 border-dashed border-green-primary/40 text-green-primary rounded-full px-6 py-3 min-h-[56px] font-quicksand text-sm font-medium hover:bg-green-primary/5 active:scale-95 transition-all"
+      aria-label="Agregar actividad"
+      aria-haspopup="dialog"
+      aria-expanded={isFormOpen}
+    >
+      + Agregar actividad
+    </button>
+  ) : null;
+
+  const formulario = isFormOpen ? (
+    <AgregarActividadForm onSubmit={handleSubmit} onCancel={() => setIsFormOpen(false)} />
+  ) : null;
 
   if (actividades.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12">
         <p className="text-text-muted font-quicksand text-center text-sm">
           No hay actividades disponibles para esta planificación.
         </p>
+        {agregarButton}
+        {formulario}
       </div>
     );
   }
@@ -48,34 +74,36 @@ export default function ActividadesTab({ actividades, planificacionId }: Activid
   })).filter((group) => group.actividades.length > 0);
 
   return (
-    <div className="space-y-4" role="list" aria-label="Actividades por día">
-      {grouped.map((group) => (
-        <DayCard
-          key={group.dia}
-          dia={group.label}
-          diaKey={group.dia}
-          color={group.color}
-          actividades={group.actividades}
-          planificacionId={planificacionId}
-          onUpdateField={updateField}
-          onAddActividad={addActividad}
-        />
-      ))}
+    <div>
+      <div className="space-y-4" role="list" aria-label="Actividades por día">
+        {grouped.map((group) => (
+          <DayCard
+            key={group.dia}
+            dia={group.label}
+            color={group.color}
+            actividades={group.actividades}
+            planificacionId={planificacionId}
+            onUpdateField={updateField}
+          />
+        ))}
+      </div>
+
+      {/* Botón único para agregar actividad (al final del listado de días) */}
+      {agregarButton}
+      {formulario}
     </div>
   );
 }
 
 interface DayCardProps {
   dia: string;
-  diaKey: string;
   color: string;
   actividades: Actividad[];
   planificacionId?: string;
   onUpdateField: (path: string, value: string) => Promise<void>;
-  onAddActividad: (dia: string) => void;
 }
 
-function DayCard({ dia, diaKey, color, actividades, planificacionId, onUpdateField, onAddActividad }: DayCardProps) {
+function DayCard({ dia, color, actividades, planificacionId, onUpdateField }: DayCardProps) {
   return (
     <article
       className="bg-white rounded-xl shadow-sm border border-border-light p-4"
@@ -125,17 +153,6 @@ function DayCard({ dia, diaKey, color, actividades, planificacionId, onUpdateFie
           </div>
         ))}
       </div>
-
-      {/* Agregar actividad button */}
-      {planificacionId && (
-        <button
-          onClick={() => onAddActividad(diaKey)}
-          className="mt-3 w-full border-2 border-dashed border-green-primary/40 text-green-primary rounded-full px-6 py-3 min-h-[56px] font-quicksand text-sm font-medium hover:bg-green-primary/5 active:scale-95 transition-all"
-          aria-label={`Agregar actividad para ${dia}`}
-        >
-          + Agregar actividad
-        </button>
-      )}
     </article>
   );
 }
