@@ -27,6 +27,8 @@ export interface Planificacion {
 
 export interface Actividad {
   id: string;
+  /** Semana de la planificación a la que pertenece la actividad (entero >= 1). */
+  semana: number;
   dia: 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes';
   titulo: string;
   descripcion: string;
@@ -100,6 +102,8 @@ export interface GeminiPlanificacionResponse {
   areaCurricular: string;
   ambitoExperiencia: string;
   actividades: {
+    /** Semana de la planificación (entero >= 1). Si falta, se asume 1. */
+    semana?: number;
     dia: 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes';
     titulo: string;
     descripcion: string;

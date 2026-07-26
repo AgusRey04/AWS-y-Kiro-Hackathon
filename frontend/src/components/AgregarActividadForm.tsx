@@ -14,6 +14,7 @@ export const DIAS_DISPONIBLES: { value: Actividad['dia']; label: string }[] = [
 
 export const TITULO_MAX_LENGTH = 500;
 export const DESCRIPCION_MAX_LENGTH = 2000;
+export const SEMANA_MIN = 1;
 
 interface AgregarActividadFormProps {
   /** Se ejecuta al confirmar. Si rechaza, el formulario permanece abierto y muestra el error. */
@@ -21,21 +22,37 @@ interface AgregarActividadFormProps {
   onCancel: () => void;
   /** Día preseleccionado (opcional). */
   diaInicial?: Actividad['dia'] | '';
+  /** Semana preseleccionada: por defecto, la última semana existente de la planificación. */
+  semanaInicial?: number;
 }
 
 const ERROR_DIA = 'Elegí un día para la actividad.';
+const ERROR_SEMANA = 'La semana debe ser un número entero mayor o igual a 1.';
 const ERROR_TITULO = 'El título es obligatorio.';
 const ERROR_DESCRIPCION = 'La descripción es obligatoria.';
+
+interface Errores {
+  dia?: string;
+  semana?: string;
+  titulo?: string;
+  descripcion?: string;
+}
 
 export default function AgregarActividadForm({
   onSubmit,
   onCancel,
   diaInicial = '',
+  semanaInicial = SEMANA_MIN,
 }: AgregarActividadFormProps) {
   const [dia, setDia] = useState<Actividad['dia'] | ''>(diaInicial);
+  const [semana, setSemana] = useState<string>(
+    String(Number.isFinite(semanaInicial) && semanaInicial >= SEMANA_MIN
+      ? Math.trunc(semanaInicial)
+      : SEMANA_MIN)
+  );
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [errores, setErrores] = useState<{ dia?: string; titulo?: string; descripcion?: string }>({});
+  const [errores, setErrores] = useState<Errores>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const diaRef = useRef<HTMLSelectElement>(null);
@@ -56,9 +73,14 @@ export default function AgregarActividadForm({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onCancel]);
 
+  const semanaNumero = Number(semana);
+  const semanaEsValida =
+    semana.trim().length > 0 && Number.isInteger(semanaNumero) && semanaNumero >= SEMANA_MIN;
+
   const validar = () => {
-    const nuevos: { dia?: string; titulo?: string; descripcion?: string } = {};
+    const nuevos: Errores = {};
     if (!dia) nuevos.dia = ERROR_DIA;
+    if (!semanaEsValida) nuevos.semana = ERROR_SEMANA;
     if (titulo.trim().length === 0) nuevos.titulo = ERROR_TITULO;
     if (descripcion.trim().length === 0) nuevos.descripcion = ERROR_DESCRIPCION;
     return nuevos;
@@ -76,6 +98,7 @@ export default function AgregarActividadForm({
     try {
       await onSubmit({
         dia: dia as Actividad['dia'],
+        semana: semanaNumero,
         titulo: titulo.trim(),
         descripcion: descripcion.trim(),
       });
@@ -142,6 +165,40 @@ export default function AgregarActividadForm({
             {errores.dia && (
               <p id="error-dia" className="mt-1 text-xs font-quicksand text-red-500">
                 {errores.dia}
+              </p>
+            )}
+          </div>
+
+          {/* Semana */}
+          <div className="mb-4">
+            <label
+              htmlFor="nueva-actividad-semana"
+              className="block text-sm font-medium font-quicksand text-text-dark mb-1"
+            >
+              Semana
+            </label>
+            <input
+              id="nueva-actividad-semana"
+              type="number"
+              inputMode="numeric"
+              min={SEMANA_MIN}
+              step={1}
+              value={semana}
+              onChange={(e) => {
+                setSemana(e.target.value);
+                setErrores((prev) => ({ ...prev, semana: undefined }));
+              }}
+              aria-invalid={errores.semana ? true : undefined}
+              aria-describedby={errores.semana ? 'error-semana' : 'ayuda-semana'}
+              className={`${inputBase} ${errores.semana ? 'border-red-500' : 'border-border-light'}`}
+            />
+            {errores.semana ? (
+              <p id="error-semana" className="mt-1 text-xs font-quicksand text-red-500">
+                {errores.semana}
+              </p>
+            ) : (
+              <p id="ayuda-semana" className="mt-1 text-xs font-quicksand text-text-muted">
+                Semana de la planificación (1, 2, 3...).
               </p>
             )}
           </div>

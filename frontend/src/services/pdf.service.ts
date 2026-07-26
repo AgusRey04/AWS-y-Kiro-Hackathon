@@ -1,5 +1,16 @@
 import { jsPDF } from 'jspdf';
-import type { Planificacion } from '../types';
+import type { Actividad, Planificacion } from '../types';
+
+/** Semana de una actividad, tolerante a datos sin el campo. */
+function semanaDe(actividad: Actividad): number {
+  const valor = Number(actividad.semana);
+  return Number.isFinite(valor) && valor >= 1 ? Math.trunc(valor) : 1;
+}
+
+/** Semanas presentes en el conjunto de actividades, en orden ascendente. */
+function semanasPresentes(actividades: Actividad[]): number[] {
+  return [...new Set(actividades.map(semanaDe))].sort((a, b) => a - b);
+}
 
 const MARGIN = 15; // mm
 const PAGE_WIDTH = 210; // A4 width in mm
@@ -108,43 +119,57 @@ export function generatePdf(planificacion: Planificacion): jsPDF {
   writeSectionTitle('Área Curricular');
   writeBodyText(`${planificacion.areaCurricular} - ${planificacion.ambitoExperiencia}`);
 
-  // === ACTIVIDADES POR DÍA ===
+  // === ACTIVIDADES POR SEMANA Y DÍA ===
   writeSectionTitle('Actividades');
 
-  for (const day of DAY_ORDER) {
-    const actividadesDelDia = planificacion.actividades
-      .filter((a) => a.dia === day.key)
-      .sort((a, b) => a.orden - b.orden);
+  const semanas = semanasPresentes(planificacion.actividades);
+  const variasSemanas = semanas.length > 1;
 
-    if (actividadesDelDia.length === 0) continue;
-
-    // Day subtitle
-    checkPageBreak(8);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(day.color);
-    doc.text(day.label, MARGIN, y);
-    y += 12 * 0.353 * LINE_HEIGHT;
-    doc.setTextColor('#000000');
-
-    for (const actividad of actividadesDelDia) {
-      // Activity title
-      doc.setFontSize(BODY_FONT_SIZE);
+  for (const semana of semanas) {
+    // Subtítulo de semana (solo si la planificación abarca más de una)
+    if (variasSemanas) {
+      checkPageBreak(8);
+      doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
-      const titleLines = doc.splitTextToSize(actividad.titulo, CONTENT_WIDTH - 4);
-      const lineHeightMm = BODY_FONT_SIZE * 0.353 * LINE_HEIGHT;
+      doc.text(`Semana ${semana}`, MARGIN, y);
+      y += 13 * 0.353 * LINE_HEIGHT;
+    }
 
-      for (const line of titleLines) {
-        checkPageBreak(lineHeightMm + 2);
-        doc.text(line, MARGIN + 2, y);
-        y += lineHeightMm;
-      }
+    for (const day of DAY_ORDER) {
+      const actividadesDelDia = planificacion.actividades
+        .filter((a) => semanaDe(a) === semana && a.dia === day.key)
+        .sort((a, b) => a.orden - b.orden);
 
-      // Activity description
-      if (actividad.descripcion) {
-        writeBodyText(actividad.descripcion);
+      if (actividadesDelDia.length === 0) continue;
+
+      // Day subtitle
+      checkPageBreak(8);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(day.color);
+      doc.text(day.label, MARGIN, y);
+      y += 12 * 0.353 * LINE_HEIGHT;
+      doc.setTextColor('#000000');
+
+      for (const actividad of actividadesDelDia) {
+        // Activity title
+        doc.setFontSize(BODY_FONT_SIZE);
+        doc.setFont('helvetica', 'bold');
+        const titleLines = doc.splitTextToSize(actividad.titulo, CONTENT_WIDTH - 4);
+        const lineHeightMm = BODY_FONT_SIZE * 0.353 * LINE_HEIGHT;
+
+        for (const line of titleLines) {
+          checkPageBreak(lineHeightMm + 2);
+          doc.text(line, MARGIN + 2, y);
+          y += lineHeightMm;
+        }
+
+        // Activity description
+        if (actividad.descripcion) {
+          writeBodyText(actividad.descripcion);
+        }
+        y += 2; // small spacing between activities
       }
-      y += 2; // small spacing between activities
     }
   }
 

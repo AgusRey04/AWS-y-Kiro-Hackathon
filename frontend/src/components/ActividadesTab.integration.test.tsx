@@ -27,7 +27,7 @@ const MOCK_PLAN = {
   fundamentacion: 'Fundamentación.',
   categoria: 'recientes' as const,
   actividades: [
-    { id: 'act-1', dia: 'lunes', titulo: 'Ronda inicial', descripcion: 'Presentación', orden: 1 },
+    { id: 'act-1', semana: 1, dia: 'lunes', titulo: 'Ronda inicial', descripcion: 'Presentación', orden: 1 },
   ],
   materiales: [],
   adaptaciones: [],
@@ -65,10 +65,15 @@ async function abrirFormularioYCompletar(
   user: ReturnType<typeof userEvent.setup>,
   dia: string,
   titulo: string,
-  descripcion: string
+  descripcion: string,
+  semana?: number
 ) {
   await user.click(screen.getByRole('button', { name: 'Agregar actividad' }));
   await user.selectOptions(screen.getByLabelText('Día'), dia);
+  if (semana !== undefined) {
+    await user.clear(screen.getByLabelText('Semana'));
+    await user.type(screen.getByLabelText('Semana'), String(semana));
+  }
   await user.type(screen.getByLabelText('Título'), titulo);
   await user.type(screen.getByLabelText('Descripción'), descripcion);
   await user.click(screen.getByRole('button', { name: 'Agregar' }));
@@ -98,6 +103,7 @@ describe('ActividadesTab + PlanContext (integración con MSW)', () => {
           {
             data: {
               id: 'act-db-99',
+              semana: 1,
               dia: 'viernes',
               titulo: 'Kermesse del Movimiento',
               descripcion: 'Postas lúdicas con juegos motores',
@@ -137,6 +143,7 @@ describe('ActividadesTab + PlanContext (integración con MSW)', () => {
 
     expect(bodyRecibido).toEqual({
       dia: 'viernes',
+      semana: 1,
       titulo: 'Kermesse del Movimiento',
       descripcion: 'Postas lúdicas con juegos motores',
     });
@@ -150,6 +157,7 @@ describe('ActividadesTab + PlanContext (integración con MSW)', () => {
           {
             data: {
               id: 'act-db-2',
+              semana: 1,
               dia: 'lunes',
               titulo: 'Cierre del lunes',
               descripcion: 'Reflexión grupal',
@@ -174,6 +182,58 @@ describe('ActividadesTab + PlanContext (integración con MSW)', () => {
     expect(cards).toHaveLength(1);
     const texto = cards[0].textContent ?? '';
     expect(texto.indexOf('Ronda inicial')).toBeLessThan(texto.indexOf('Cierre del lunes'));
+  });
+
+  it('crea la actividad en la semana 2 y la agrupa después de la semana 1', async () => {
+    let bodyRecibido: unknown = null;
+
+    server.use(
+      http.post(`/api/planificaciones/${PLAN_ID}/actividades`, async ({ request }) => {
+        bodyRecibido = await request.json();
+        return HttpResponse.json(
+          {
+            data: {
+              id: 'act-db-s2',
+              semana: 2,
+              dia: 'lunes',
+              titulo: 'Arranque de la segunda semana',
+              descripcion: 'Retomamos lo trabajado',
+              orden: 1,
+            },
+          },
+          { status: 201 }
+        );
+      })
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+
+    await abrirFormularioYCompletar(
+      user,
+      'lunes',
+      'Arranque de la segunda semana',
+      'Retomamos lo trabajado',
+      2
+    );
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    expect(bodyRecibido).toEqual({
+      dia: 'lunes',
+      semana: 2,
+      titulo: 'Arranque de la segunda semana',
+      descripcion: 'Retomamos lo trabajado',
+    });
+
+    const cards = screen.getAllByRole('listitem');
+    expect(cards.map((c) => c.getAttribute('aria-label'))).toEqual([
+      'Actividades de la semana 1, Lunes',
+      'Actividades de la semana 2, Lunes',
+    ]);
+    expect(cards[1].textContent).toContain('Arranque de la segunda semana');
   });
 
   it('muestra el error del endpoint y no cierra el formulario', async () => {
@@ -213,6 +273,7 @@ describe('ActividadesTab + PlanContext (integración con MSW)', () => {
           {
             data: {
               id: 'act-db-3',
+              semana: 1,
               dia: 'martes',
               titulo: 'Actividad nueva',
               descripcion: 'Descripción nueva',

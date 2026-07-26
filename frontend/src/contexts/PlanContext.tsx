@@ -12,6 +12,8 @@ import type { Planificacion, Actividad, Material, Adaptacion, ApiErrorResponse }
 
 export interface NuevaActividadInput {
   dia: Actividad['dia'];
+  /** Semana de la planificación (entero >= 1). */
+  semana: number;
   titulo: string;
   descripcion: string;
 }
@@ -191,6 +193,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({
           dia: input.dia,
+          semana: input.semana,
           titulo: input.titulo,
           descripcion: input.descripcion,
         }),
@@ -211,7 +214,12 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     }
 
     const json = await res.json();
-    const creada = (json.data?.actividad ?? json.data) as Actividad;
+    const devuelta = (json.data?.actividad ?? json.data) as Actividad;
+    // Si el backend no devolviera la semana, se usa la elegida en el formulario
+    const creada: Actividad = {
+      ...devuelta,
+      semana: Number.isFinite(Number(devuelta?.semana)) ? Number(devuelta.semana) : input.semana,
+    };
 
     setPlanificacion((prev) => {
       if (!prev) return prev;

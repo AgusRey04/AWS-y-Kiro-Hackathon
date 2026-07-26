@@ -194,6 +194,7 @@ interface DayCardProps {
 | POST | `/api/planificaciones` | Crear planificación vía IA | `{consigna}` |
 | GET | `/api/planificaciones` | Listar historial | `?filtro=recientes|efemerides|proyectos` |
 | GET | `/api/planificaciones/:id` | Obtener planificación completa | - |
+| POST | `/api/planificaciones/:id/actividades` | Agregar una actividad | `{dia, semana, titulo, descripcion}` |
 | PATCH | `/api/planificaciones/:id` | Actualizar campos editados | `{path, value}` |
 | DELETE | `/api/planificaciones/:id` | Eliminar planificación | - |
 | GET | `/api/datos-estaticos/efemerides` | Efemérides próximas | `?dias=7` |
@@ -210,6 +211,7 @@ interface GeminiPlanificacionResponse {
   areaCurricular: string;
   ambitoExperiencia: string; // del Diseño Curricular SF
   actividades: {
+    semana?: number; // entero >= 1; si falta, se asume 1
     dia: 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes';
     titulo: string;
     descripcion: string;
@@ -263,6 +265,7 @@ erDiagram
     ACTIVIDAD {
         uuid id PK
         uuid planificacion_id FK
+        int semana "NOT NULL DEFAULT 1, CHECK >= 1"
         string dia "lunes|martes|miercoles|jueves|viernes"
         string titulo
         string descripcion
@@ -324,6 +327,7 @@ interface Planificacion {
 
 interface Actividad {
   id: string;
+  semana: number; // semana de la planificación (entero >= 1)
   dia: 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes';
   titulo: string;
   descripcion: string;
@@ -408,7 +412,7 @@ interface PlanContextValue {
   error: string | null;
   crear: (consigna: string) => Promise<void>;
   updateField: (path: string, value: string) => Promise<void>;
-  addActividad: (dia: string) => void;
+  addActividad: (input: { dia: string; semana: number; titulo: string; descripcion: string }) => Promise<Actividad>;
   addMaterial: () => void;
   addAdaptacion: () => void;
 }
@@ -515,9 +519,9 @@ Las ediciones inline se guardan primero en estado local, luego se sincronizan co
 
 **Validates: Requirements 3.3, 3.5**
 
-### Property 6: Activities grouped and ordered by weekday
+### Property 6: Activities grouped and ordered by week and weekday
 
-*For any* set of activities in a planificación, the Preview Actividades tab SHALL render them grouped by day in the fixed order lunes, martes, miércoles, jueves, viernes, with each day's card containing only activities belonging to that day.
+*For any* set of activities in a planificación, the Preview Actividades tab SHALL render them grouped by week in ascending order and, within each week, by day in the fixed order lunes, martes, miércoles, jueves, viernes, with each card containing only the activities belonging to that week and that day.
 
 **Validates: Requirements 4.4**
 
@@ -676,7 +680,7 @@ Cada propiedad del documento de Correctness Properties se implementa como un ún
 | 3 | SuggestionChips + ConsignaInput | Arbitrary chip text + field state |
 | 4 | CreateButton validation | Arbitrary strings (include empty, >500) |
 | 5 | GeminiResponseParser | Arbitrary JSON objects matching/violating schema |
-| 6 | ActividadesTab | Arbitrary activity arrays with mixed days |
+| 6 | ActividadesTab | Arbitrary activity arrays with mixed weeks and days |
 | 7 | EditableBlock | Arbitrary edit operations on planificación state |
 | 8 | EditableBlock | Arbitrary strings per block type |
 | 9 | PdfGenerator | Arbitrary valid planificación objects |

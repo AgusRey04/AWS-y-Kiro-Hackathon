@@ -106,6 +106,7 @@ const fragmentoArb = fc
 const actividadesArb = fc
   .array(
     fc.record({
+      semana: fc.integer({ min: 1, max: 2 }),
       dia: fc.constantFrom(...DIAS),
       orden: fc.integer({ min: 1, max: 5 }),
     }),
@@ -116,6 +117,7 @@ const actividadesArb = fc
       const tag = String(index).padStart(2, '0');
       return {
         id: `act-${tag}`,
+        semana: item.semana,
         dia: item.dia,
         titulo: `Titulo-${tag}`,
         descripcion: `Descripcion-${tag}`,
@@ -271,12 +273,18 @@ describe('Feature: edu-planner, Property 7: Structural preservation during inlin
 
         expect(etiquetasDespues).toEqual(etiquetasAntes);
 
-        // El orden de días renderizado es siempre una subsecuencia de lunes→viernes
-        const indices = etiquetasDespues.map((label) =>
-          DIAS.findIndex((dia) => label === `Actividades del ${DIA_LABEL[dia]}`)
-        );
-        expect(indices.every((i) => i >= 0)).toBe(true);
-        expect(indices).toEqual([...indices].sort((a, b) => a - b));
+        // El orden renderizado es siempre (semana ascendente, día lunes→viernes)
+        const claves = etiquetasDespues.map((label) => {
+          const conSemana = /^Actividades de la semana (\d+), (.+)$/.exec(label ?? '');
+          const semana = conSemana ? Number(conSemana[1]) : 1;
+          const etiquetaDia = conSemana
+            ? conSemana[2]
+            : (label ?? '').replace('Actividades del ', '');
+          const indiceDia = DIAS.findIndex((dia) => DIA_LABEL[dia] === etiquetaDia);
+          expect(indiceDia).toBeGreaterThanOrEqual(0);
+          return semana * 10 + indiceDia;
+        });
+        expect(claves).toEqual([...claves].sort((a, b) => a - b));
 
         unmount();
       }),

@@ -6,7 +6,7 @@ import type { Actividad } from '../types';
 
 /**
  * Feature: edu-planner
- * Property test for activities grouping and ordering
+ * Property test for activities grouping and ordering (semana + día)
  * Validates: Requirements 4.4
  */
 
@@ -37,13 +37,38 @@ const DIA_LABEL: Record<Dia, string> = {
 };
 
 /**
- * Generador inteligente de actividades: días mezclados (no ordenados),
- * títulos y descripciones únicos por índice para poder rastrear a qué día
- * pertenece cada actividad renderizada.
+ * Etiqueta accesible esperada, calculada de forma independiente al componente:
+ * con varias semanas se nombra la semana; con una sola, solo el día.
+ */
+function etiquetaEsperada(semana: number, dia: Dia, variasSemanas: boolean): string {
+  return variasSemanas
+    ? `Actividades de la semana ${semana}, ${DIA_LABEL[dia]}`
+    : `Actividades del ${DIA_LABEL[dia]}`;
+}
+
+/** Grupos esperados: semana ascendente y, dentro de cada semana, lunes→viernes. */
+function gruposEsperados(actividades: Actividad[]): { semana: number; dia: Dia }[] {
+  const semanas = [...new Set(actividades.map((a) => a.semana))].sort((a, b) => a - b);
+  const grupos: { semana: number; dia: Dia }[] = [];
+  for (const semana of semanas) {
+    for (const dia of DIAS) {
+      if (actividades.some((a) => a.semana === semana && a.dia === dia)) {
+        grupos.push({ semana, dia });
+      }
+    }
+  }
+  return grupos;
+}
+
+/**
+ * Generador inteligente de actividades: semanas y días mezclados (no ordenados),
+ * títulos y descripciones únicos por índice para poder rastrear a qué semana y
+ * día pertenece cada actividad renderizada.
  */
 const actividadesArb = fc
   .array(
     fc.record({
+      semana: fc.integer({ min: 1, max: 4 }),
       dia: fc.constantFrom(...DIAS),
       orden: fc.integer({ min: 1, max: 5 }),
     }),
@@ -55,6 +80,7 @@ const actividadesArb = fc
       const tag = String(index).padStart(2, '0');
       return {
         id: `act-${tag}`,
+        semana: item.semana,
         dia: item.dia,
         titulo: `Titulo-${tag}`,
         descripcion: `Descripcion-${tag}`,
@@ -63,37 +89,33 @@ const actividadesArb = fc
     })
   );
 
-describe('Feature: edu-planner, Property 6: Activities grouped and ordered by weekday', () => {
+describe('Feature: edu-planner, Property 6: Activities grouped and ordered by week and weekday', () => {
   /**
    * **Validates: Requirements 4.4**
    *
    * For any set of activities in a planificación, the Preview Actividades tab SHALL
-   * render them grouped by day in the fixed order lunes, martes, miércoles, jueves,
-   * viernes, with each day's card containing only activities belonging to that day.
+   * render them grouped by week in ascending order and, within each week, by day in
+   * the fixed order lunes, martes, miércoles, jueves, viernes, with each card
+   * containing only the activities belonging to that week and that day.
    */
 
-  it('renders one card per present day, in the fixed lunes→viernes order', () => {
+  it('renders one card per present (semana, día) pair, ordered by semana asc then lunes→viernes', () => {
     fc.assert(
       fc.property(actividadesArb, (actividades) => {
         const { unmount } = render(<ActividadesTab actividades={actividades} />);
 
-        const diasPresentes = DIAS.filter((dia) =>
-          actividades.some((a) => a.dia === dia)
-        );
+        const esperados = gruposEsperados(actividades);
+        const variasSemanas = new Set(actividades.map((a) => a.semana)).size > 1;
 
-        if (diasPresentes.length === 0) {
+        if (esperados.length === 0) {
           expect(screen.queryAllByRole('listitem')).toHaveLength(0);
         } else {
           const cards = screen.getAllByRole('listitem');
-          expect(cards).toHaveLength(diasPresentes.length);
+          expect(cards).toHaveLength(esperados.length);
 
-          const renderedLabels = cards.map((card) =>
-            card.getAttribute('aria-label')
+          expect(cards.map((card) => card.getAttribute('aria-label'))).toEqual(
+            esperados.map((g) => etiquetaEsperada(g.semana, g.dia, variasSemanas))
           );
-          const expectedLabels = diasPresentes.map(
-            (dia) => `Actividades del ${DIA_LABEL[dia]}`
-          );
-          expect(renderedLabels).toEqual(expectedLabels);
         }
 
         unmount();
@@ -102,21 +124,22 @@ describe('Feature: edu-planner, Property 6: Activities grouped and ordered by we
     );
   });
 
-  it("each day's card contains only the activities belonging to that day", () => {
+  it('each card contains only the activities belonging to that week and that day', () => {
     fc.assert(
       fc.property(actividadesArb, (actividades) => {
         const { unmount } = render(<ActividadesTab actividades={actividades} />);
 
-        const diasPresentes = DIAS.filter((dia) =>
-          actividades.some((a) => a.dia === dia)
-        );
-        const cards =
-          diasPresentes.length === 0 ? [] : screen.getAllByRole('listitem');
+        const esperados = gruposEsperados(actividades);
+        const cards = esperados.length === 0 ? [] : screen.getAllByRole('listitem');
 
-        diasPresentes.forEach((dia, cardIndex) => {
+        esperados.forEach((grupo, cardIndex) => {
           const card = cards[cardIndex];
-          const propias = actividades.filter((a) => a.dia === dia);
-          const ajenas = actividades.filter((a) => a.dia !== dia);
+          const propias = actividades.filter(
+            (a) => a.semana === grupo.semana && a.dia === grupo.dia
+          );
+          const ajenas = actividades.filter(
+            (a) => a.semana !== grupo.semana || a.dia !== grupo.dia
+          );
 
           propias.forEach((a) => {
             expect(card.textContent).toContain(a.titulo);
@@ -136,13 +159,12 @@ describe('Feature: edu-planner, Property 6: Activities grouped and ordered by we
     );
   });
 
-  it('preserves every activity exactly once across all day cards', () => {
+  it('preserves every activity exactly once across all cards', () => {
     fc.assert(
       fc.property(actividadesArb, (actividades) => {
         const { unmount } = render(<ActividadesTab actividades={actividades} />);
 
-        const hayActividades = actividades.length > 0;
-        const cards = hayActividades ? screen.getAllByRole('listitem') : [];
+        const cards = actividades.length > 0 ? screen.getAllByRole('listitem') : [];
         const textoTotal = cards.map((c) => c.textContent ?? '').join('|');
 
         actividades.forEach((a) => {
@@ -155,7 +177,7 @@ describe('Feature: edu-planner, Property 6: Activities grouped and ordered by we
     );
   });
 
-  it('day order is independent of the input order (shuffled input yields same day sequence)', () => {
+  it('grouping is independent of the input order (shuffled input yields same card sequence)', () => {
     const nonEmptyArb = actividadesArb.filter((as) => as.length > 0);
 
     fc.assert(
@@ -176,13 +198,39 @@ describe('Feature: edu-planner, Property 6: Activities grouped and ordered by we
 
         expect(labelsReversed).toEqual(labelsOriginal);
 
-        // Y esa secuencia siempre es una subsecuencia del orden lunes→viernes
-        const indices = labelsOriginal.map((label) =>
-          DIAS.findIndex((dia) => label === `Actividades del ${DIA_LABEL[dia]}`)
+        // Y esa secuencia siempre es (semana asc, día lunes→viernes)
+        const variasSemanas = new Set(actividades.map((a) => a.semana)).size > 1;
+        const claves = gruposEsperados(actividades).map(
+          (g) => g.semana * 10 + DIAS.indexOf(g.dia)
         );
-        expect(indices.every((i) => i >= 0)).toBe(true);
-        const sorted = [...indices].sort((a, b) => a - b);
-        expect(indices).toEqual(sorted);
+        expect(claves).toEqual([...claves].sort((a, b) => a - b));
+        expect(labelsOriginal).toEqual(
+          gruposEsperados(actividades).map((g) =>
+            etiquetaEsperada(g.semana, g.dia, variasSemanas)
+          )
+        );
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('shows the week in the card heading only when the planificación spans several weeks', () => {
+    fc.assert(
+      fc.property(actividadesArb.filter((as) => as.length > 0), (actividades) => {
+        const { unmount } = render(<ActividadesTab actividades={actividades} />);
+
+        const semanas = [...new Set(actividades.map((a) => a.semana))].sort((a, b) => a - b);
+        const variasSemanas = semanas.length > 1;
+        const headings = screen
+          .getAllByRole('heading', { level: 3 })
+          .map((h) => h.textContent);
+
+        const esperados = gruposEsperados(actividades).map((g) =>
+          variasSemanas ? `Semana ${g.semana} · ${DIA_LABEL[g.dia]}` : DIA_LABEL[g.dia]
+        );
+        expect(headings).toEqual(esperados);
+
+        unmount();
       }),
       { numRuns: 100 }
     );
@@ -194,8 +242,8 @@ describe('Feature: edu-planner, Property 6 (extensión): botón único de agrega
    * **Validates: Requirements 4.4**
    *
    * Para cualquier conjunto de actividades, la pestaña Actividades en modo edición
-   * SHALL renderizar exactamente un botón "Agregar actividad" (nunca uno por día),
-   * sin alterar el agrupamiento ni el orden lunes→viernes.
+   * SHALL renderizar exactamente un botón "Agregar actividad" (nunca uno por día ni
+   * por semana), sin alterar el agrupamiento por semana ni el orden lunes→viernes.
    */
 
   it('renders exactly one "Agregar actividad" button regardless of the activities set', () => {
@@ -213,7 +261,7 @@ describe('Feature: edu-planner, Property 6 (extensión): botón único de agrega
     );
   });
 
-  it('never renders add buttons inside day cards, and day order stays lunes→viernes', () => {
+  it('never renders add buttons inside cards, and the (semana, día) order is preserved', () => {
     fc.assert(
       fc.property(actividadesArb, (actividades) => {
         const { unmount } = render(
@@ -225,13 +273,12 @@ describe('Feature: edu-planner, Property 6 (extensión): botón único de agrega
           expect(card.querySelector('button')).toBeNull();
         });
 
-        const indices = cards.map((card) =>
-          DIAS.findIndex(
-            (dia) => card.getAttribute('aria-label') === `Actividades del ${DIA_LABEL[dia]}`
+        const variasSemanas = new Set(actividades.map((a) => a.semana)).size > 1;
+        expect(cards.map((card) => card.getAttribute('aria-label'))).toEqual(
+          gruposEsperados(actividades).map((g) =>
+            etiquetaEsperada(g.semana, g.dia, variasSemanas)
           )
         );
-        expect(indices.every((i) => i >= 0)).toBe(true);
-        expect(indices).toEqual([...indices].sort((a, b) => a - b));
 
         unmount();
       }),

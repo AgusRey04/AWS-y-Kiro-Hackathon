@@ -22,6 +22,78 @@ const DAY_LABELS: Record<Actividad['dia'], string> = {
   viernes: 'Viernes',
 };
 
+/** Semana de una actividad, tolerante a datos viejos sin el campo. */
+function semanaDe(actividad: Actividad): number {
+  const valor = Number(actividad.semana);
+  return Number.isFinite(valor) && valor >= 1 ? Math.trunc(valor) : 1;
+}
+
+/** Semanas presentes en el conjunto de actividades, en orden ascendente. */
+export function semanasPresentes(actividades: Actividad[]): number[] {
+  return [...new Set(actividades.map(semanaDe))].sort((a, b) => a - b);
+}
+
+/** Última semana existente (la que se propone por defecto al agregar). */
+export function ultimaSemana(actividades: Actividad[]): number {
+  const semanas = semanasPresentes(actividades);
+  return semanas.length > 0 ? semanas[semanas.length - 1] : 1;
+}
+
+/**
+ * Encabezado de una tarjeta. Con una sola semana se muestra solo el día para
+ * evitar ruido visual; con varias semanas se prefija "Semana N · ".
+ */
+export function tituloTarjeta(semana: number, dia: Actividad['dia'], variasSemanas: boolean): string {
+  return variasSemanas ? `Semana ${semana} · ${DAY_LABELS[dia]}` : DAY_LABELS[dia];
+}
+
+/** Etiqueta accesible de una tarjeta, coherente con el encabezado visible. */
+export function etiquetaTarjeta(semana: number, dia: Actividad['dia'], variasSemanas: boolean): string {
+  return variasSemanas
+    ? `Actividades de la semana ${semana}, ${DAY_LABELS[dia]}`
+    : `Actividades del ${DAY_LABELS[dia]}`;
+}
+
+interface GrupoActividades {
+  semana: number;
+  dia: Actividad['dia'];
+  titulo: string;
+  etiqueta: string;
+  color: string;
+  actividades: Actividad[];
+}
+
+/**
+ * Agrupa las actividades por semana ascendente y, dentro de cada semana, por día
+ * en el orden fijo lunes → viernes. Los grupos vacíos se descartan.
+ */
+export function agruparActividades(actividades: Actividad[]): GrupoActividades[] {
+  const semanas = semanasPresentes(actividades);
+  const variasSemanas = semanas.length > 1;
+
+  const grupos: GrupoActividades[] = [];
+  for (const semana of semanas) {
+    for (const dia of DAY_ORDER) {
+      const delGrupo = actividades
+        .filter((a) => semanaDe(a) === semana && a.dia === dia)
+        .sort((a, b) => a.orden - b.orden);
+
+      if (delGrupo.length === 0) continue;
+
+      grupos.push({
+        semana,
+        dia,
+        titulo: tituloTarjeta(semana, dia, variasSemanas),
+        etiqueta: etiquetaTarjeta(semana, dia, variasSemanas),
+        color: DAY_COLORS[dia],
+        actividades: delGrupo,
+      });
+    }
+  }
+
+  return grupos;
+}
+
 interface ActividadesTabProps {
   actividades: Actividad[];
   planificacionId?: string;
@@ -49,7 +121,11 @@ export default function ActividadesTab({ actividades, planificacionId }: Activid
   ) : null;
 
   const formulario = isFormOpen ? (
-    <AgregarActividadForm onSubmit={handleSubmit} onCancel={() => setIsFormOpen(false)} />
+    <AgregarActividadForm
+      onSubmit={handleSubmit}
+      onCancel={() => setIsFormOpen(false)}
+      semanaInicial={ultimaSemana(actividades)}
+    />
   ) : null;
 
   if (actividades.length === 0) {
@@ -64,31 +140,25 @@ export default function ActividadesTab({ actividades, planificacionId }: Activid
     );
   }
 
-  const grouped = DAY_ORDER.map((dia) => ({
-    dia,
-    label: DAY_LABELS[dia],
-    color: DAY_COLORS[dia],
-    actividades: actividades
-      .filter((a) => a.dia === dia)
-      .sort((a, b) => a.orden - b.orden),
-  })).filter((group) => group.actividades.length > 0);
+  const grupos = agruparActividades(actividades);
 
   return (
     <div>
-      <div className="space-y-4" role="list" aria-label="Actividades por día">
-        {grouped.map((group) => (
+      <div className="space-y-4" role="list" aria-label="Actividades por semana y día">
+        {grupos.map((grupo) => (
           <DayCard
-            key={group.dia}
-            dia={group.label}
-            color={group.color}
-            actividades={group.actividades}
+            key={`${grupo.semana}-${grupo.dia}`}
+            dia={grupo.titulo}
+            etiqueta={grupo.etiqueta}
+            color={grupo.color}
+            actividades={grupo.actividades}
             planificacionId={planificacionId}
             onUpdateField={updateField}
           />
         ))}
       </div>
 
-      {/* Botón único para agregar actividad (al final del listado de días) */}
+      {/* Botón único para agregar actividad (al final del listado) */}
       {agregarButton}
       {formulario}
     </div>
@@ -96,20 +166,30 @@ export default function ActividadesTab({ actividades, planificacionId }: Activid
 }
 
 interface DayCardProps {
+  /** Texto del encabezado: "Lunes" o "Semana 2 · Lunes". */
   dia: string;
+  /** Etiqueta accesible; por defecto se deriva del encabezado. */
+  etiqueta?: string;
   color: string;
   actividades: Actividad[];
   planificacionId?: string;
   onUpdateField: (path: string, value: string) => Promise<void>;
 }
 
-function DayCard({ dia, color, actividades, planificacionId, onUpdateField }: DayCardProps) {
+function DayCard({
+  dia,
+  etiqueta,
+  color,
+  actividades,
+  planificacionId,
+  onUpdateField,
+}: DayCardProps) {
   return (
     <article
       className="bg-white rounded-xl shadow-sm border border-border-light p-4"
       style={{ borderLeftWidth: '4px', borderLeftColor: color }}
       role="listitem"
-      aria-label={`Actividades del ${dia}`}
+      aria-label={etiqueta ?? `Actividades del ${dia}`}
     >
       <h3 className="text-sm font-bold font-quicksand text-text-dark uppercase tracking-wide mb-2">
         {dia}

@@ -355,6 +355,7 @@ describe('POST /api/planificaciones/:id/actividades', () => {
 
   const validBody = {
     dia: 'viernes',
+    semana: 2,
     titulo: 'Kermesse del Movimiento para Calentar el Cuerpo',
     descripcion: 'Organizaremos una serie de postas lúdicas con juegos motores.',
   };
@@ -376,6 +377,7 @@ describe('POST /api/planificaciones/:id/actividades', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{
         id: 'act-uuid-nueva',
+        semana: validBody.semana,
         dia: validBody.dia,
         titulo: validBody.titulo,
         descripcion: validBody.descripcion,
@@ -417,6 +419,7 @@ describe('POST /api/planificaciones/:id/actividades', () => {
     expect(res.status).toBe(201);
     expect(res.body.data).toEqual({
       id: 'act-uuid-nueva',
+      semana: 2,
       dia: 'viernes',
       titulo: validBody.titulo,
       descripcion: validBody.descripcion,
@@ -430,18 +433,18 @@ describe('POST /api/planificaciones/:id/actividades', () => {
       [planId, userId]
     );
 
-    // orden calculado como el siguiente del día
+    // orden calculado como el siguiente de esa semana + día
     expect(mockQuery).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('COALESCE(MAX(orden), 0) + 1'),
-      [planId, 'viernes']
+      [planId, 2, 'viernes']
     );
 
-    // insert parametrizado con el orden calculado
+    // insert parametrizado con la semana y el orden calculado
     expect(mockQuery).toHaveBeenNthCalledWith(
       3,
       expect.stringContaining('INSERT INTO actividad'),
-      [planId, 'viernes', validBody.titulo, validBody.descripcion, 3]
+      [planId, 2, 'viernes', validBody.titulo, validBody.descripcion, 3]
     );
   });
 
@@ -465,14 +468,14 @@ describe('POST /api/planificaciones/:id/actividades', () => {
       app,
       'POST',
       endpoint,
-      { dia: 'lunes', titulo: '  Titulo  ', descripcion: '  Desc  ' },
+      { dia: 'lunes', semana: 1, titulo: '  Titulo  ', descripcion: '  Desc  ' },
       { Authorization: validToken }
     );
 
     expect(mockQuery).toHaveBeenNthCalledWith(
       3,
       expect.stringContaining('INSERT INTO actividad'),
-      [planId, 'lunes', 'Titulo', 'Desc', 1]
+      [planId, 1, 'lunes', 'Titulo', 'Desc', 1]
     );
   });
 
@@ -528,6 +531,95 @@ describe('POST /api/planificaciones/:id/actividades', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+
+  // --- Semana ---
+
+  it('should default semana to 1 when it is not provided', async () => {
+    mockOwnershipOkAndInsert(1, { semana: 1 });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { dia: 'lunes', titulo: 'Titulo', descripcion: 'Desc' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.semana).toBe(1);
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO actividad'),
+      [planId, 1, 'lunes', 'Titulo', 'Desc', 1]
+    );
+  });
+
+  it.each([1, 2, 3, 12])('should accept semana %s (integer >= 1)', async (semana) => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+    mockOwnershipOkAndInsert(1, { semana });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { ...validBody, semana },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.semana).toBe(semana);
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('semana = $2'),
+      [planId, semana, validBody.dia]
+    );
+  });
+
+  it.each([[0], [-1], [1.5], ['dos'], [''.padEnd(3, ' ')], [true], [[]], [{}]])(
+    'should return 400 when semana is invalid: %s',
+    async (semana: unknown) => {
+      vi.clearAllMocks();
+      mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+
+      const app = createApp();
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { ...validBody, semana },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(res.body.message).toContain('semana');
+      expect(mockQuery).not.toHaveBeenCalled();
+    }
+  );
+
+  it('should isolate orden per semana (same day, different weeks)', async () => {
+    mockOwnershipOkAndInsert(1, { semana: 3 });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { ...validBody, semana: 3 },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+    // El cálculo del orden se restringe a la semana y el día elegidos
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('semana = $2 AND dia = $3'),
+      [planId, 3, validBody.dia]
+    );
   });
 
   it('should return 400 when titulo is missing or empty', async () => {

@@ -87,10 +87,13 @@ const fechaArb = fc
   .date({ min: new Date('2024-01-01'), max: new Date('2026-12-31'), noInvalidDate: true })
   .map((d) => d.toISOString().slice(0, 10));
 
+const MAX_SEMANAS = 2;
+
 /**
- * Planificación válida: al menos una actividad por cada día de lunes a viernes,
- * 2-4 objetivos, materiales y adaptaciones no vacíos, fundamentación extensa.
- * Los textos llevan un tag único para poder localizarlos sin ambigüedad.
+ * Planificación válida: 1 a 3 semanas, con al menos una actividad por cada día de
+ * lunes a viernes en cada semana, 2-4 objetivos, materiales y adaptaciones no
+ * vacíos, fundamentación extensa. Los textos llevan un tag único para poder
+ * localizarlos sin ambigüedad.
  */
 const planificacionArb: fc.Arbitrary<Planificacion> = fc
   .record({
@@ -101,10 +104,14 @@ const planificacionArb: fc.Arbitrary<Planificacion> = fc
     fundamentacion: fraseArb(20, 60),
     fechaInicio: fechaArb,
     fechaFin: fechaArb,
-    extraPorDia: fc.array(fc.integer({ min: 0, max: 2 }), { minLength: 5, maxLength: 5 }),
+    cantidadSemanas: fc.integer({ min: 1, max: MAX_SEMANAS }),
+    extraPorDia: fc.array(fc.integer({ min: 0, max: 2 }), {
+      minLength: 5 * MAX_SEMANAS,
+      maxLength: 5 * MAX_SEMANAS,
+    }),
     actividadTextos: fc.array(fc.tuple(fraseArb(1, 3), fraseArb(3, 10)), {
-      minLength: 15,
-      maxLength: 15,
+      minLength: 15 * MAX_SEMANAS,
+      maxLength: 15 * MAX_SEMANAS,
     }),
     materiales: fc.array(fraseArb(1, 3), { minLength: 1, maxLength: 5 }),
     adaptaciones: fc.array(fc.tuple(fraseArb(1, 2), fraseArb(1, 3), fraseArb(3, 10)), {
@@ -115,21 +122,24 @@ const planificacionArb: fc.Arbitrary<Planificacion> = fc
   .map((base) => {
     const actividades: Actividad[] = [];
     let cursor = 0;
-    DIAS.forEach((dia, indiceDia) => {
-      const cantidad = 1 + base.extraPorDia[indiceDia];
-      for (let orden = 1; orden <= cantidad; orden++) {
-        const [tituloBase, descripcionBase] = base.actividadTextos[cursor];
-        const tag = `A${indiceDia}${orden}`;
-        actividades.push({
-          id: `act-${tag}`,
-          dia,
-          titulo: `${tag}T ${tituloBase}`,
-          descripcion: `${tag}D ${descripcionBase}`,
-          orden,
-        });
-        cursor++;
-      }
-    });
+    for (let semana = 1; semana <= base.cantidadSemanas; semana++) {
+      DIAS.forEach((dia, indiceDia) => {
+        const cantidad = 1 + base.extraPorDia[(semana - 1) * 5 + indiceDia];
+        for (let orden = 1; orden <= cantidad; orden++) {
+          const [tituloBase, descripcionBase] = base.actividadTextos[cursor];
+          const tag = `S${semana}A${indiceDia}${orden}`;
+          actividades.push({
+            id: `act-${tag}`,
+            semana,
+            dia,
+            titulo: `${tag}T ${tituloBase}`,
+            descripcion: `${tag}D ${descripcionBase}`,
+            orden,
+          });
+          cursor++;
+        }
+      });
+    }
 
     const materiales: Material[] = base.materiales.map((nombre, i) => ({
       id: `mat-${i}`,
@@ -208,7 +218,7 @@ describe('Feature: edu-planner, Property 9: PDF content completeness', () => {
     );
   });
 
-  it('el PDF contiene todas las actividades agrupadas bajo su día y en orden lunes a viernes', () => {
+  it('el PDF contiene todas las actividades agrupadas por semana ascendente y, dentro de cada semana, por día lunes a viernes', () => {
     fc.assert(
       fc.property(planificacionArb, (plan) => {
         const lineas = extraerLineas(generatePdf(plan));
@@ -220,38 +230,61 @@ describe('Feature: edu-planner, Property 9: PDF content completeness', () => {
           expect(contiene(pdfTexto, actividad.descripcion)).toBe(true);
         }
 
-        // Los encabezados de día aparecen una vez y en orden lunes → viernes
-        const indicesDia = DIAS.map((dia) => {
-          const label = normalizar(DIA_LABEL[dia]);
+        const semanas = [...new Set(plan.actividades.map((a) => a.semana))].sort(
+          (a, b) => a - b
+        );
+        const variasSemanas = semanas.length > 1;
+        const indiceMateriales = lineas.indexOf('Materiales');
+        expect(indiceMateriales).toBeGreaterThanOrEqual(0);
+
+        // Límites de cada bloque de semana
+        const iniciosSemana = semanas.map((semana) => {
+          if (!variasSemanas) return lineas.indexOf('Actividades');
+          const label = `Semana ${semana}`;
           const primero = lineas.indexOf(label);
           expect(primero).toBeGreaterThanOrEqual(0);
+          // El encabezado de semana aparece una sola vez
           expect(lineas.lastIndexOf(label)).toBe(primero);
           return primero;
         });
-        expect(indicesDia).toEqual([...indicesDia].sort((a, b) => a - b));
+        // Las semanas aparecen en orden ascendente
+        expect(iniciosSemana).toEqual([...iniciosSemana].sort((a, b) => a - b));
 
-        const indiceMateriales = lineas.indexOf('Materiales');
-        expect(indiceMateriales).toBeGreaterThan(indicesDia[DIAS.length - 1]);
+        semanas.forEach((semana, s) => {
+          const inicioSemana = iniciosSemana[s];
+          const finSemana = s + 1 < semanas.length ? iniciosSemana[s + 1] : indiceMateriales;
 
-        // Cada actividad se ubica dentro del bloque de su día y respeta el campo orden
-        DIAS.forEach((dia, i) => {
-          const inicioBloque = indicesDia[i];
-          const finBloque = i + 1 < DIAS.length ? indicesDia[i + 1] : indiceMateriales;
-
-          const actividadesDelDia = plan.actividades
-            .filter((a) => a.dia === dia)
-            .sort((a, b) => a.orden - b.orden);
-
-          const posiciones = actividadesDelDia.map((actividad) => {
-            const posicion = lineas.findIndex((linea) =>
-              linea.startsWith(normalizar(actividad.titulo).slice(0, 12))
-            );
-            expect(posicion).toBeGreaterThan(inicioBloque);
-            expect(posicion).toBeLessThan(finBloque);
-            return posicion;
+          // Dentro de la semana, los días aparecen una vez y en orden lunes → viernes
+          const indicesDia = DIAS.map((dia) => {
+            const label = normalizar(DIA_LABEL[dia]);
+            const posiciones = lineas
+              .map((linea, i) => (linea === label ? i : -1))
+              .filter((i) => i > inicioSemana && i < finSemana);
+            expect(posiciones).toHaveLength(1);
+            return posiciones[0];
           });
+          expect(indicesDia).toEqual([...indicesDia].sort((a, b) => a - b));
 
-          expect(posiciones).toEqual([...posiciones].sort((a, b) => a - b));
+          // Cada actividad se ubica dentro del bloque de su día y respeta el campo orden
+          DIAS.forEach((dia, i) => {
+            const inicioBloque = indicesDia[i];
+            const finBloque = i + 1 < DIAS.length ? indicesDia[i + 1] : finSemana;
+
+            const actividadesDelDia = plan.actividades
+              .filter((a) => a.semana === semana && a.dia === dia)
+              .sort((a, b) => a.orden - b.orden);
+
+            const posiciones = actividadesDelDia.map((actividad) => {
+              const posicion = lineas.findIndex((linea) =>
+                linea.startsWith(normalizar(actividad.titulo).slice(0, 12))
+              );
+              expect(posicion).toBeGreaterThan(inicioBloque);
+              expect(posicion).toBeLessThan(finBloque);
+              return posicion;
+            });
+
+            expect(posiciones).toEqual([...posiciones].sort((a, b) => a - b));
+          });
         });
       }),
       { numRuns: 100 }

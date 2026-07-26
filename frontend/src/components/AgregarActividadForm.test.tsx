@@ -5,24 +5,33 @@ import AgregarActividadForm, {
   DIAS_DISPONIBLES,
   TITULO_MAX_LENGTH,
   DESCRIPCION_MAX_LENGTH,
+  SEMANA_MIN,
 } from './AgregarActividadForm';
 
 interface SetupOverrides {
   onSubmit?: ReturnType<typeof vi.fn>;
   onCancel?: ReturnType<typeof vi.fn>;
+  semanaInicial?: number;
 }
 
 function setup(overrides: SetupOverrides = {}) {
   const onSubmit = overrides.onSubmit ?? vi.fn().mockResolvedValue(undefined);
   const onCancel = overrides.onCancel ?? vi.fn();
-  const utils = render(<AgregarActividadForm onSubmit={onSubmit} onCancel={onCancel} />);
+  const utils = render(
+    <AgregarActividadForm
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+      semanaInicial={overrides.semanaInicial}
+    />
+  );
   return { onSubmit, onCancel, user: userEvent.setup(), ...utils };
 }
 
 describe('AgregarActividadForm', () => {
-  it('renderiza los tres campos con labels asociados', () => {
+  it('renderiza los cuatro campos con labels asociados', () => {
     setup();
     expect(screen.getByLabelText('Día')).toBeInTheDocument();
+    expect(screen.getByLabelText('Semana')).toBeInTheDocument();
     expect(screen.getByLabelText('Título')).toBeInTheDocument();
     expect(screen.getByLabelText('Descripción')).toBeInTheDocument();
   });
@@ -163,6 +172,7 @@ describe('AgregarActividadForm', () => {
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith({
         dia: 'viernes',
+        semana: 1,
         titulo: 'Kermesse del Movimiento',
         descripcion: 'Postas lúdicas con juegos motores',
       })
@@ -223,8 +233,117 @@ describe('AgregarActividadForm', () => {
   it('mantiene la altura mínima de 56px en inputs y botones (sistema de diseño)', () => {
     setup();
     expect(screen.getByLabelText('Día').className).toContain('min-h-[56px]');
+    expect(screen.getByLabelText('Semana').className).toContain('min-h-[56px]');
     expect(screen.getByLabelText('Título').className).toContain('min-h-[56px]');
     expect(screen.getByRole('button', { name: 'Agregar' }).className).toContain('min-h-[56px]');
     expect(screen.getByRole('button', { name: 'Cancelar' }).className).toContain('min-h-[56px]');
+  });
+});
+
+describe('AgregarActividadForm - campo Semana', () => {
+  it('es un input numérico con mínimo 1 y paso 1', () => {
+    setup();
+    const input = screen.getByLabelText('Semana') as HTMLInputElement;
+    expect(input.type).toBe('number');
+    expect(input).toHaveAttribute('min', String(SEMANA_MIN));
+    expect(input).toHaveAttribute('step', '1');
+    expect(SEMANA_MIN).toBe(1);
+  });
+
+  it('usa la semana 1 por defecto cuando no se le pasa semanaInicial', () => {
+    setup();
+    expect((screen.getByLabelText('Semana') as HTMLInputElement).value).toBe('1');
+  });
+
+  it('preselecciona la última semana existente de la planificación', () => {
+    setup({ semanaInicial: 4 });
+    expect((screen.getByLabelText('Semana') as HTMLInputElement).value).toBe('4');
+  });
+
+  it('cae en la semana 1 si semanaInicial es inválida', () => {
+    setup({ semanaInicial: 0 });
+    expect((screen.getByLabelText('Semana') as HTMLInputElement).value).toBe('1');
+  });
+
+  it('envía la semana elegida junto con el resto del formulario', async () => {
+    const { onSubmit, user } = setup({ semanaInicial: 1 });
+
+    await user.selectOptions(screen.getByLabelText('Día'), 'martes');
+    await user.clear(screen.getByLabelText('Semana'));
+    await user.type(screen.getByLabelText('Semana'), '3');
+    await user.type(screen.getByLabelText('Título'), 'Taller de arcilla');
+    await user.type(screen.getByLabelText('Descripción'), 'Modelado libre con arcilla');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        dia: 'martes',
+        semana: 3,
+        titulo: 'Taller de arcilla',
+        descripcion: 'Modelado libre con arcilla',
+      })
+    );
+  });
+
+  it.each(['0', '-2', '1.5'])('no envía cuando la semana es inválida: %s', async (valor) => {
+    const { onSubmit, user } = setup();
+
+    await user.selectOptions(screen.getByLabelText('Día'), 'lunes');
+    await user.clear(screen.getByLabelText('Semana'));
+    await user.type(screen.getByLabelText('Semana'), valor);
+    await user.type(screen.getByLabelText('Título'), 'Kermesse');
+    await user.type(screen.getByLabelText('Descripción'), 'Postas lúdicas');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    expect(
+      await screen.findByText('La semana debe ser un número entero mayor o igual a 1.')
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Semana')).toHaveAttribute('aria-invalid', 'true');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('no envía cuando la semana quedó vacía', async () => {
+    const { onSubmit, user } = setup();
+
+    await user.selectOptions(screen.getByLabelText('Día'), 'lunes');
+    await user.clear(screen.getByLabelText('Semana'));
+    await user.type(screen.getByLabelText('Título'), 'Kermesse');
+    await user.type(screen.getByLabelText('Descripción'), 'Postas lúdicas');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    expect(
+      await screen.findByText('La semana debe ser un número entero mayor o igual a 1.')
+    ).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('limpia el error de semana al corregirla', async () => {
+    const { user } = setup();
+
+    await user.clear(screen.getByLabelText('Semana'));
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+    expect(
+      await screen.findByText('La semana debe ser un número entero mayor o igual a 1.')
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Semana'), '2');
+    expect(
+      screen.queryByText('La semana debe ser un número entero mayor o igual a 1.')
+    ).not.toBeInTheDocument();
+  });
+
+  it('acepta semanas altas (más allá de las existentes)', async () => {
+    const { onSubmit, user } = setup();
+
+    await user.selectOptions(screen.getByLabelText('Día'), 'jueves');
+    await user.clear(screen.getByLabelText('Semana'));
+    await user.type(screen.getByLabelText('Semana'), '12');
+    await user.type(screen.getByLabelText('Título'), 'Cierre de proyecto');
+    await user.type(screen.getByLabelText('Descripción'), 'Muestra a las familias');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ semana: 12 }))
+    );
   });
 });

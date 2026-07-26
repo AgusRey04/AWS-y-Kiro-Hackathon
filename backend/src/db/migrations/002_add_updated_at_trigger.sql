@@ -9,13 +9,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger for usuario table
+-- Trigger for usuario table (idempotente: el runner corre todas las migraciones)
+DROP TRIGGER IF EXISTS trigger_usuario_updated_at ON usuario;
 CREATE TRIGGER trigger_usuario_updated_at
   BEFORE UPDATE ON usuario
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- Trigger for planificacion table
+-- Trigger for planificacion table (idempotente)
+DROP TRIGGER IF EXISTS trigger_planificacion_updated_at ON planificacion;
 CREATE TRIGGER trigger_planificacion_updated_at
   BEFORE UPDATE ON planificacion
   FOR EACH ROW
