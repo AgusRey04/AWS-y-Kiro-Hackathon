@@ -682,7 +682,7 @@ Cada propiedad del documento de Correctness Properties se implementa como un ún
 |----------|-----------------|----------------------|
 | 1 | VoiceRecorder | Arbitrary strings (0-2000 chars) |
 | 2 | ConsignaInput | Arbitrary strings (0-600 chars) |
-| 3 | SuggestionChips + ConsignaInput | Arbitrary chip text + field state |
+| 3 | SuggestionChips + HomePage (insertChip) | Arbitrary chip text + field state |
 | 4 | CreateButton validation | Arbitrary strings (include empty, >500) |
 | 5 | GeminiResponseParser | Arbitrary JSON objects matching/violating schema |
 | 6 | ActividadesTab | Arbitrary activity arrays with mixed weeks and days |
