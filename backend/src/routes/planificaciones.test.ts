@@ -755,6 +755,250 @@ describe('POST /api/planificaciones/:id/actividades', () => {
   });
 });
 
+describe('POST /api/planificaciones/:id/materiales', () => {
+  const validToken = 'Bearer valid-token';
+  const userId = 'user-uuid-123';
+  const planId = 'plan-uuid-1';
+  const endpoint = `/api/planificaciones/${planId}/materiales`;
+
+  const validBody = {
+    nombre: 'Linternas pequeñas',
+    icono: '🔦',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockResolvedValue({
+      success: true,
+      data: { id: userId },
+    } as any);
+  });
+
+  function mockOwnershipOkAndInsert(orden: number, overrides: Record<string, unknown> = {}) {
+    // 1) ownership check
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    // 2) next orden
+    mockQuery.mockResolvedValueOnce({ rows: [{ siguiente: orden }], rowCount: 1 } as any);
+    // 3) insert
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: 'mat-uuid-nuevo',
+        nombre: validBody.nombre,
+        icono: validBody.icono,
+        orden,
+        ...overrides,
+      }],
+      rowCount: 1,
+    } as any);
+  }
+
+  it('should return 401 when no token is provided', async () => {
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody);
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('should return 401 when token is invalid', async () => {
+    mockVerifyToken.mockResolvedValueOnce({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Token inválido' },
+    } as any);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: 'Bearer invalid-token',
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('should create the material and return it with its DB id (happy path)', async () => {
+    mockOwnershipOkAndInsert(4);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data).toEqual({
+      id: 'mat-uuid-nuevo',
+      nombre: validBody.nombre,
+      icono: validBody.icono,
+      orden: 4,
+    });
+
+    // Ownership validado por usuario_id
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('WHERE id = $1 AND usuario_id = $2'),
+      [planId, userId]
+    );
+
+    // orden calculado como el siguiente dentro de la planificación
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('COALESCE(MAX(orden), 0) + 1'),
+      [planId]
+    );
+
+    // insert parametrizado con nombre, icono y orden calculado
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO material'),
+      [planId, validBody.nombre, validBody.icono, 4]
+    );
+  });
+
+  it('should use orden 1 when there are no materiales yet', async () => {
+    mockOwnershipOkAndInsert(1);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.orden).toBe(1);
+  });
+
+  it('should trim nombre and icono before inserting', async () => {
+    mockOwnershipOkAndInsert(1);
+
+    const app = createApp();
+    await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { nombre: '  Lana  ', icono: ' 🧦 ' },
+      { Authorization: validToken }
+    );
+
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO material'),
+      [planId, 'Lana', '🧦', 1]
+    );
+  });
+
+  it('should return 400 when nombre is missing or empty', async () => {
+    const app = createApp();
+
+    for (const nombre of [undefined, '', '   ']) {
+      vi.clearAllMocks();
+      mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { nombre, icono: '🔦' },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(mockQuery).not.toHaveBeenCalled();
+    }
+  });
+
+  it('should return 400 when nombre exceeds 500 characters', async () => {
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { nombre: 'A'.repeat(501), icono: '🔦' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.message).toContain('500 caracteres');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should accept nombre of exactly 500 characters', async () => {
+    mockOwnershipOkAndInsert(1, { nombre: 'A'.repeat(500) });
+
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { nombre: 'A'.repeat(500), icono: '🔦' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(201);
+  });
+
+  it('should return 400 when icono is missing or empty', async () => {
+    const app = createApp();
+
+    for (const icono of [undefined, '', '   ']) {
+      vi.clearAllMocks();
+      mockVerifyToken.mockResolvedValue({ success: true, data: { id: userId } } as any);
+
+      const res = await requestWithBody(
+        app,
+        'POST',
+        endpoint,
+        { nombre: 'Linternas', icono },
+        { Authorization: validToken }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
+      expect(mockQuery).not.toHaveBeenCalled();
+    }
+  });
+
+  it('should return 400 when icono exceeds 8 characters', async () => {
+    const app = createApp();
+    const res = await requestWithBody(
+      app,
+      'POST',
+      endpoint,
+      { nombre: 'Linternas', icono: '🔦🔦🔦🔦🔦' },
+      { Authorization: validToken }
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.message).toContain('8 caracteres');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should return 404 when the planificación belongs to another user', async () => {
+    // Ownership check devuelve vacío
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+    expect(res.body.message).toBe('Planificación no encontrada.');
+    // No debe insertar nada
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return 500 when the database fails', async () => {
+    mockQuery.mockRejectedValueOnce(new Error('DB connection lost'));
+
+    const app = createApp();
+    const res = await requestWithBody(app, 'POST', endpoint, validBody, {
+      Authorization: validToken,
+    });
+
+    expect(res.status).toBe(500);
+    expect(res.body.code).toBe('INTERNAL_ERROR');
+  });
+});
+
 describe('DELETE /api/planificaciones/:id/actividades/:actividadId', () => {
   const validToken = 'Bearer valid-token';
   const userId = 'user-uuid-123';
@@ -868,5 +1112,121 @@ describe('DELETE /api/planificaciones/:id/actividades/:actividadId', () => {
     const sqls = mockQuery.mock.calls.map((call) => String(call[0]));
     expect(sqls.some((sql) => sql.includes('DELETE FROM planificacion'))).toBe(false);
     expect(sqls.some((sql) => sql.includes('DELETE FROM material'))).toBe(false);
+  });
+});
+
+describe('DELETE /api/planificaciones/:id/materiales/:materialId', () => {
+  const validToken = 'Bearer valid-token';
+  const userId = 'user-uuid-123';
+  const planId = 'plan-uuid-1';
+  const materialId = 'mat-uuid-1';
+  const endpoint = `/api/planificaciones/${planId}/materiales/${materialId}`;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockResolvedValue({
+      success: true,
+      data: { id: userId },
+    } as any);
+  });
+
+  it('should return 401 when no token is provided', async () => {
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint);
+
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHORIZED');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should return 401 when token is invalid', async () => {
+    mockVerifyToken.mockResolvedValueOnce({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Token inválido' },
+    } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, {
+      Authorization: 'Bearer invalid-token',
+    });
+
+    expect(res.status).toBe(401);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should delete only that material and return success (happy path)', async () => {
+    // 1) ownership check
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    // 2) delete
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ success: true });
+
+    // Ownership validado ANTES de borrar
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('WHERE id = $1 AND usuario_id = $2'),
+      [planId, userId]
+    );
+
+    // Borra solo ese material, acotado a la planificación
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('DELETE FROM material WHERE id = $1 AND planificacion_id = $2'),
+      [materialId, planId]
+    );
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+  });
+
+  it('should return 404 when the planificación belongs to another user', async () => {
+    // Ownership check devuelve vacío
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+    expect(res.body.message).toBe('Planificación no encontrada.');
+    // No debe borrar nada
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return 404 when the material does not exist in that planificación', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+    expect(res.body.message).toBe('Material no encontrado.');
+  });
+
+  it('should return 500 when the database fails', async () => {
+    mockQuery.mockRejectedValueOnce(new Error('DB connection lost'));
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(500);
+    expect(res.body.code).toBe('INTERNAL_ERROR');
+  });
+
+  it('should not be captured by DELETE /:id or DELETE /:id/actividades/:actividadId', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+
+    const app = createApp();
+    await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    const sqls = mockQuery.mock.calls.map((call) => String(call[0]));
+    expect(sqls.some((sql) => sql.includes('DELETE FROM planificacion'))).toBe(false);
+    expect(sqls.some((sql) => sql.includes('DELETE FROM actividad'))).toBe(false);
   });
 });

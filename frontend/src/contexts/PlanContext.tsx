@@ -18,6 +18,11 @@ export interface NuevaActividadInput {
   descripcion: string;
 }
 
+export interface NuevoMaterialInput {
+  nombre: string;
+  icono: string;
+}
+
 // --- Context Value ---
 
 interface PlanContextValue {
@@ -29,7 +34,8 @@ interface PlanContextValue {
   updateField: (path: string, value: string) => Promise<void>;
   addActividad: (input: NuevaActividadInput) => Promise<Actividad>;
   deleteActividad: (actividadId: string) => Promise<void>;
-  addMaterial: () => void;
+  addMaterial: (input: NuevoMaterialInput) => Promise<Material>;
+  deleteMaterial: (materialId: string) => Promise<void>;
   addAdaptacion: () => void;
 }
 
@@ -280,21 +286,106 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     });
   }, [planificacion]);
 
-  const addMaterial = useCallback(() => {
+  /**
+   * Crea un material en el backend y, con la respuesta, lo agrega al estado local
+   * usando el id real de la base de datos (así las ediciones inline con PATCH funcionan).
+   * Lanza un Error si la llamada falla, para que el formulario pueda mostrarlo y reintentar.
+   */
+  const addMaterial = useCallback(async (input: NuevoMaterialInput): Promise<Material> => {
+    if (!planificacion) {
+      throw new Error('No hay una planificación activa.');
+    }
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    let res: Response;
+    try {
+      res = await fetch(`/api/planificaciones/${planificacion.id}/materiales`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          nombre: input.nombre,
+          icono: input.icono,
+        }),
+      });
+    } catch {
+      throw new Error('No pudimos agregar el material. Revisá tu conexión y reintentá.');
+    }
+
+    if (!res.ok) {
+      let message = 'No pudimos agregar el material. ¿Querés reintentar?';
+      try {
+        const errorJson: ApiErrorResponse = await res.json();
+        if (errorJson?.message) message = errorJson.message;
+      } catch {
+        // Respuesta sin JSON: se usa el mensaje por defecto
+      }
+      throw new Error(message);
+    }
+
+    const json = await res.json();
+    const creado = (json.data?.material ?? json.data) as Material;
+
     setPlanificacion((prev) => {
       if (!prev) return prev;
-      const newMaterial: Material = {
-        id: crypto.randomUUID(),
-        nombre: '',
-        icono: '📦',
-        orden: prev.materiales.length + 1,
-      };
       return {
         ...prev,
-        materiales: [...prev.materiales, newMaterial],
+        materiales: [...prev.materiales, creado],
       };
     });
-  }, []);
+
+    return creado;
+  }, [planificacion]);
+
+  /**
+   * Borra un material en el backend y, al éxito, lo quita del estado local
+   * (por lo que desaparece del Preview y del PDF que se genera a partir de él).
+   * Lanza un Error si la llamada falla, para que la UI pueda mostrarlo y reintentar.
+   */
+  const deleteMaterial = useCallback(async (materialId: string): Promise<void> => {
+    if (!planificacion) {
+      throw new Error('No hay una planificación activa.');
+    }
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    let res: Response;
+    try {
+      res = await fetch(
+        `/api/planificaciones/${planificacion.id}/materiales/${materialId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+    } catch {
+      throw new Error('No pudimos eliminar el material. Revisá tu conexión y reintentá.');
+    }
+
+    if (!res.ok) {
+      let message = 'No pudimos eliminar el material. ¿Querés reintentar?';
+      try {
+        const errorJson: ApiErrorResponse = await res.json();
+        if (errorJson?.message) message = errorJson.message;
+      } catch {
+        // Respuesta sin JSON: se usa el mensaje por defecto
+      }
+      throw new Error(message);
+    }
+
+    setPlanificacion((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        materiales: prev.materiales.filter((m) => m.id !== materialId),
+      };
+    });
+  }, [planificacion]);
 
   const addAdaptacion = useCallback(() => {
     setPlanificacion((prev) => {
@@ -325,6 +416,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         addActividad,
         deleteActividad,
         addMaterial,
+        deleteMaterial,
         addAdaptacion,
       }}
     >

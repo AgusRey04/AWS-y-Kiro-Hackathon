@@ -450,6 +450,96 @@ planificacionesRoutes.post('/:id/actividades', async (req: Request, res: Respons
 });
 
 /**
+ * POST /api/planificaciones/:id/materiales
+ * Create a single material inside an existing planificación.
+ * Body: { nombre, icono }
+ * - nombre: required, max 500 chars
+ * - icono: required, string no vacío, max 8 chars (admite emojis compuestos)
+ * - orden is computed as the next one within the planificación
+ */
+planificacionesRoutes.post('/:id/materiales', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const { id } = req.params;
+      const { nombre, icono } = req.body ?? {};
+
+      if (!nombre || typeof nombre !== 'string' || nombre.trim().length === 0) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'El nombre es requerido y debe ser texto.',
+        });
+        return;
+      }
+
+      if (nombre.length > 500) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'Los nombres no pueden superar los 500 caracteres.',
+        });
+        return;
+      }
+
+      if (!icono || typeof icono !== 'string' || icono.trim().length === 0) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'El icono es requerido y debe ser texto.',
+        });
+        return;
+      }
+
+      if (icono.length > 8) {
+        res.status(400).json({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: 'El icono no puede superar los 8 caracteres.',
+        });
+        return;
+      }
+
+      // Verify planificación belongs to user BEFORE inserting
+      const planCheck = await query(
+        'SELECT id FROM planificacion WHERE id = $1 AND usuario_id = $2',
+        [id, user.id]
+      );
+
+      if (planCheck.rows.length === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Planificación no encontrada.',
+        });
+        return;
+      }
+
+      // Next orden within this planificación
+      const ordenResult = await query(
+        `SELECT COALESCE(MAX(orden), 0) + 1 AS siguiente
+         FROM material
+         WHERE planificacion_id = $1`,
+        [id]
+      );
+
+      const siguiente = (ordenResult.rows[0] as { siguiente: number | string } | undefined)?.siguiente;
+      const orden = Number(siguiente) > 0 ? Number(siguiente) : 1;
+
+      const insertResult = await query(
+        `INSERT INTO material (planificacion_id, nombre, icono, orden)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, nombre, icono, orden`,
+        [id, nombre.trim(), icono.trim(), orden]
+      );
+
+      res.status(201).json({ data: insertResult.rows[0] });
+    } catch (error) {
+      console.error('Material creation error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
+});
+
+/**
  * DELETE /api/planificaciones/:id/actividades/:actividadId
  * Delete a single actividad from a planificación owned by the authenticated user.
  * - 404 si la planificación no existe o no pertenece al usuario
@@ -495,6 +585,60 @@ planificacionesRoutes.delete('/:id/actividades/:actividadId', async (req: Reques
       res.status(200).json({ data: { success: true } });
     } catch (error) {
       console.error('Actividad delete error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
+});
+
+/**
+ * DELETE /api/planificaciones/:id/materiales/:materialId
+ * Delete a single material from a planificación owned by the authenticated user.
+ * - 404 si la planificación no existe o no pertenece al usuario
+ * - 404 si el material no existe dentro de esa planificación
+ * - 200 con { data: { success: true } } al borrar
+ *
+ * Nota: se declara antes de `DELETE /:id` por claridad de lectura; Express no
+ * confunde ambas rutas porque tienen distinta cantidad de segmentos.
+ */
+planificacionesRoutes.delete('/:id/materiales/:materialId', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const { id, materialId } = req.params;
+
+      // Verify planificación belongs to user BEFORE deleting anything
+      const planCheck = await query(
+        'SELECT id FROM planificacion WHERE id = $1 AND usuario_id = $2',
+        [id, user.id]
+      );
+
+      if (planCheck.rows.length === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Planificación no encontrada.',
+        });
+        return;
+      }
+
+      const deleteResult = await query(
+        'DELETE FROM material WHERE id = $1 AND planificacion_id = $2',
+        [materialId, id]
+      );
+
+      if (deleteResult.rowCount === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Material no encontrado.',
+        });
+        return;
+      }
+
+      res.status(200).json({ data: { success: true } });
+    } catch (error) {
+      console.error('Material delete error:', error);
       res.status(500).json({
         code: ApiErrorCode.INTERNAL_ERROR,
         message: 'Error interno del servidor',

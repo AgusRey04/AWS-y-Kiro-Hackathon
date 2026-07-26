@@ -195,8 +195,10 @@ interface DayCardProps {
 | GET | `/api/planificaciones` | Listar historial | `?filtro=recientes|efemerides|proyectos` |
 | GET | `/api/planificaciones/:id` | Obtener planificación completa | - |
 | POST | `/api/planificaciones/:id/actividades` | Agregar una actividad | `{dia, semana, titulo, descripcion}` |
+| POST | `/api/planificaciones/:id/materiales` | Agregar un material | `{nombre, icono}` |
 | PATCH | `/api/planificaciones/:id` | Actualizar campos editados | `{path, value}` |
 | DELETE | `/api/planificaciones/:id/actividades/:actividadId` | Eliminar una actividad | - |
+| DELETE | `/api/planificaciones/:id/materiales/:materialId` | Eliminar un material | - |
 | DELETE | `/api/planificaciones/:id` | Eliminar planificación | - |
 | GET | `/api/datos-estaticos/efemerides` | Efemérides próximas | `?dias=7` |
 | GET | `/api/datos-estaticos/sugerencias` | Chips de sugerencia | - |
@@ -415,7 +417,8 @@ interface PlanContextValue {
   updateField: (path: string, value: string) => Promise<void>;
   addActividad: (input: { dia: string; semana: number; titulo: string; descripcion: string }) => Promise<Actividad>;
   deleteActividad: (actividadId: string) => Promise<void>;
-  addMaterial: () => void;
+  addMaterial: (input: { nombre: string; icono: string }) => Promise<Material>;
+  deleteMaterial: (materialId: string) => Promise<void>;
   addAdaptacion: () => void;
 }
 ```
