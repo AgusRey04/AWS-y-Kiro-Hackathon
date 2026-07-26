@@ -18,6 +18,11 @@ export interface NuevaActividadInput {
   descripcion: string;
 }
 
+export interface NuevoMaterialInput {
+  nombre: string;
+  icono: string;
+}
+
 // --- Context Value ---
 
 interface PlanContextValue {
@@ -29,7 +34,7 @@ interface PlanContextValue {
   updateField: (path: string, value: string) => Promise<void>;
   addActividad: (input: NuevaActividadInput) => Promise<Actividad>;
   deleteActividad: (actividadId: string) => Promise<void>;
-  addMaterial: () => void;
+  addMaterial: (input: NuevoMaterialInput) => Promise<Material>;
   addAdaptacion: () => void;
 }
 
@@ -280,21 +285,59 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     });
   }, [planificacion]);
 
-  const addMaterial = useCallback(() => {
+  /**
+   * Crea un material en el backend y, con la respuesta, lo agrega al estado local
+   * usando el id real de la base de datos (así las ediciones inline con PATCH funcionan).
+   * Lanza un Error si la llamada falla, para que el formulario pueda mostrarlo y reintentar.
+   */
+  const addMaterial = useCallback(async (input: NuevoMaterialInput): Promise<Material> => {
+    if (!planificacion) {
+      throw new Error('No hay una planificación activa.');
+    }
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    let res: Response;
+    try {
+      res = await fetch(`/api/planificaciones/${planificacion.id}/materiales`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          nombre: input.nombre,
+          icono: input.icono,
+        }),
+      });
+    } catch {
+      throw new Error('No pudimos agregar el material. Revisá tu conexión y reintentá.');
+    }
+
+    if (!res.ok) {
+      let message = 'No pudimos agregar el material. ¿Querés reintentar?';
+      try {
+        const errorJson: ApiErrorResponse = await res.json();
+        if (errorJson?.message) message = errorJson.message;
+      } catch {
+        // Respuesta sin JSON: se usa el mensaje por defecto
+      }
+      throw new Error(message);
+    }
+
+    const json = await res.json();
+    const creado = (json.data?.material ?? json.data) as Material;
+
     setPlanificacion((prev) => {
       if (!prev) return prev;
-      const newMaterial: Material = {
-        id: crypto.randomUUID(),
-        nombre: '',
-        icono: '📦',
-        orden: prev.materiales.length + 1,
-      };
       return {
         ...prev,
-        materiales: [...prev.materiales, newMaterial],
+        materiales: [...prev.materiales, creado],
       };
     });
-  }, []);
+
+    return creado;
+  }, [planificacion]);
 
   const addAdaptacion = useCallback(() => {
     setPlanificacion((prev) => {

@@ -1,7 +1,10 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MaterialesTab from './MaterialesTab';
 import type { Material } from '../types';
+
+const mockAddMaterial = vi.fn().mockResolvedValue(undefined);
 
 // Mock PlanContext
 vi.mock('../contexts/PlanContext', () => ({
@@ -13,7 +16,7 @@ vi.mock('../contexts/PlanContext', () => ({
     updateField: vi.fn().mockResolvedValue(undefined),
     addActividad: vi.fn(),
     deleteActividad: vi.fn(),
-    addMaterial: vi.fn(),
+    addMaterial: mockAddMaterial,
     addAdaptacion: vi.fn(),
   }),
 }));
@@ -25,6 +28,11 @@ const mockMateriales: Material[] = [
 ];
 
 describe('MaterialesTab', () => {
+  beforeEach(() => {
+    mockAddMaterial.mockClear();
+    mockAddMaterial.mockResolvedValue(undefined);
+  });
+
   it('muestra empty state cuando no hay materiales', () => {
     render(<MaterialesTab materiales={[]} />);
     expect(screen.getByText('No hay materiales disponibles para esta planificación.')).toBeInTheDocument();
@@ -59,5 +67,66 @@ describe('MaterialesTab', () => {
   it('muestra botón Agregar item personalizado cuando hay planificacionId', () => {
     render(<MaterialesTab materiales={mockMateriales} planificacionId="plan-1" />);
     expect(screen.getByText('+ Agregar item personalizado')).toBeInTheDocument();
+  });
+
+  it('no muestra el botón Agregar item personalizado en modo lectura (sin planificacionId)', () => {
+    render(<MaterialesTab materiales={mockMateriales} />);
+    expect(screen.queryByText('+ Agregar item personalizado')).not.toBeInTheDocument();
+  });
+
+  it('muestra el botón Agregar item personalizado también en el empty state', () => {
+    render(<MaterialesTab materiales={[]} planificacionId="plan-1" />);
+    expect(screen.getByRole('button', { name: 'Agregar item personalizado' })).toBeInTheDocument();
+  });
+
+  it('abre el formulario al presionar el botón en vez de llamar directo a addMaterial', async () => {
+    const user = userEvent.setup();
+    render(<MaterialesTab materiales={mockMateriales} planificacionId="plan-1" />);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Agregar item personalizado' }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(mockAddMaterial).not.toHaveBeenCalled();
+  });
+
+  it('cierra el formulario al cancelar sin llamar a addMaterial', async () => {
+    const user = userEvent.setup();
+    render(<MaterialesTab materiales={mockMateriales} planificacionId="plan-1" />);
+
+    await user.click(screen.getByRole('button', { name: 'Agregar item personalizado' }));
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mockAddMaterial).not.toHaveBeenCalled();
+  });
+
+  it('llama a addMaterial con nombre e ícono elegidos y cierra el formulario', async () => {
+    const user = userEvent.setup();
+    render(<MaterialesTab materiales={mockMateriales} planificacionId="plan-1" />);
+
+    await user.click(screen.getByRole('button', { name: 'Agregar item personalizado' }));
+    await user.click(screen.getByRole('radio', { name: 'Hielo' }));
+    await user.type(screen.getByLabelText('Nombre'), 'Cubitos de hielo');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    await waitFor(() =>
+      expect(mockAddMaterial).toHaveBeenCalledWith({ nombre: 'Cubitos de hielo', icono: '🧊' })
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('mantiene el formulario abierto cuando addMaterial falla', async () => {
+    mockAddMaterial.mockRejectedValueOnce(new Error('Planificación no encontrada.'));
+    const user = userEvent.setup();
+    render(<MaterialesTab materiales={mockMateriales} planificacionId="plan-1" />);
+
+    await user.click(screen.getByRole('button', { name: 'Agregar item personalizado' }));
+    await user.type(screen.getByLabelText('Nombre'), 'Nuevo material');
+    await user.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Planificación no encontrada.');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

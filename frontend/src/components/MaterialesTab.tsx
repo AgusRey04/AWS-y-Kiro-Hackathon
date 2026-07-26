@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { Material } from '../types';
 import { usePlan } from '../contexts/PlanContext';
 import EditableBlock from './EditableBlock';
+import AgregarMaterialForm, { type NuevoMaterialInput } from './AgregarMaterialForm';
 
 interface MaterialesTabProps {
   materiales: Material[];
@@ -9,6 +11,28 @@ interface MaterialesTabProps {
 
 export default function MaterialesTab({ materiales, planificacionId }: MaterialesTabProps) {
   const { updateField, addMaterial } = usePlan();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const handleSubmit = async (input: NuevoMaterialInput) => {
+    await addMaterial(input);
+    setIsFormOpen(false);
+  };
+
+  const agregarButton = planificacionId ? (
+    <button
+      onClick={() => setIsFormOpen(true)}
+      className="mt-4 w-full border-2 border-dashed border-green-primary/40 text-green-primary rounded-full px-6 py-3 min-h-[56px] font-quicksand text-sm font-medium hover:bg-green-primary/5 active:scale-95 transition-all"
+      aria-label="Agregar item personalizado"
+      aria-haspopup="dialog"
+      aria-expanded={isFormOpen}
+    >
+      + Agregar item personalizado
+    </button>
+  ) : null;
+
+  const formulario = isFormOpen ? (
+    <AgregarMaterialForm onSubmit={handleSubmit} onCancel={() => setIsFormOpen(false)} />
+  ) : null;
 
   if (materiales.length === 0) {
     return (
@@ -16,15 +40,8 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
         <p className="text-text-muted font-quicksand text-center text-sm">
           No hay materiales disponibles para esta planificación.
         </p>
-        {planificacionId && (
-          <button
-            onClick={() => addMaterial()}
-            className="mt-4 border-2 border-dashed border-green-primary/40 text-green-primary rounded-full px-6 py-3 min-h-[56px] font-quicksand text-sm font-medium hover:bg-green-primary/5 active:scale-95 transition-all"
-            aria-label="Agregar item personalizado"
-          >
-            + Agregar item personalizado
-          </button>
-        )}
+        {agregarButton}
+        {formulario}
       </div>
     );
   }
@@ -63,15 +80,8 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
       </ul>
 
       {/* Agregar item personalizado button */}
-      {planificacionId && (
-        <button
-          onClick={() => addMaterial()}
-          className="mt-4 w-full border-2 border-dashed border-green-primary/40 text-green-primary rounded-full px-6 py-3 min-h-[56px] font-quicksand text-sm font-medium hover:bg-green-primary/5 active:scale-95 transition-all"
-          aria-label="Agregar item personalizado"
-        >
-          + Agregar item personalizado
-        </button>
-      )}
+      {agregarButton}
+      {formulario}
     </div>
   );
 }
