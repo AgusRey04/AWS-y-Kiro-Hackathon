@@ -13,6 +13,7 @@ vi.mock('../contexts/PlanContext', () => ({
     addActividad: vi.fn(),
     deleteActividad: vi.fn(),
     addMaterial: vi.fn(),
+    deleteMaterial: vi.fn(),
     addAdaptacion: vi.fn(),
   }),
 }));

@@ -184,6 +184,7 @@ beforeEach(() => {
     addActividad: vi.fn(),
     deleteActividad: vi.fn(),
     addMaterial: vi.fn(),
+    deleteMaterial: vi.fn(),
     addAdaptacion: vi.fn(),
   }));
 });
@@ -223,6 +224,7 @@ describe('Feature: edu-planner, Property 7: Structural preservation during inlin
             addActividad: vi.fn(),
             deleteActividad: vi.fn(),
             addMaterial: vi.fn(),
+            deleteMaterial: vi.fn(),
             addAdaptacion: vi.fn(),
           }));
           const antes = render(<PreviewPage />);
@@ -238,6 +240,7 @@ describe('Feature: edu-planner, Property 7: Structural preservation during inlin
             addActividad: vi.fn(),
             deleteActividad: vi.fn(),
             addMaterial: vi.fn(),
+            deleteMaterial: vi.fn(),
             addAdaptacion: vi.fn(),
           }));
           const despues = render(<PreviewPage />);
@@ -307,6 +310,7 @@ describe('Feature: edu-planner, Property 7: Structural preservation during inlin
           addActividad: vi.fn(),
           deleteActividad: vi.fn(),
           addMaterial: vi.fn(),
+          deleteMaterial: vi.fn(),
           addAdaptacion: vi.fn(),
         }));
 

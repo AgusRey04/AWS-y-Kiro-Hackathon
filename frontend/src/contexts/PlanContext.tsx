@@ -35,6 +35,7 @@ interface PlanContextValue {
   addActividad: (input: NuevaActividadInput) => Promise<Actividad>;
   deleteActividad: (actividadId: string) => Promise<void>;
   addMaterial: (input: NuevoMaterialInput) => Promise<Material>;
+  deleteMaterial: (materialId: string) => Promise<void>;
   addAdaptacion: () => void;
 }
 
@@ -339,6 +340,53 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     return creado;
   }, [planificacion]);
 
+  /**
+   * Borra un material en el backend y, al éxito, lo quita del estado local
+   * (por lo que desaparece del Preview y del PDF que se genera a partir de él).
+   * Lanza un Error si la llamada falla, para que la UI pueda mostrarlo y reintentar.
+   */
+  const deleteMaterial = useCallback(async (materialId: string): Promise<void> => {
+    if (!planificacion) {
+      throw new Error('No hay una planificación activa.');
+    }
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    let res: Response;
+    try {
+      res = await fetch(
+        `/api/planificaciones/${planificacion.id}/materiales/${materialId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+    } catch {
+      throw new Error('No pudimos eliminar el material. Revisá tu conexión y reintentá.');
+    }
+
+    if (!res.ok) {
+      let message = 'No pudimos eliminar el material. ¿Querés reintentar?';
+      try {
+        const errorJson: ApiErrorResponse = await res.json();
+        if (errorJson?.message) message = errorJson.message;
+      } catch {
+        // Respuesta sin JSON: se usa el mensaje por defecto
+      }
+      throw new Error(message);
+    }
+
+    setPlanificacion((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        materiales: prev.materiales.filter((m) => m.id !== materialId),
+      };
+    });
+  }, [planificacion]);
+
   const addAdaptacion = useCallback(() => {
     setPlanificacion((prev) => {
       if (!prev) return prev;
@@ -368,6 +416,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         addActividad,
         deleteActividad,
         addMaterial,
+        deleteMaterial,
         addAdaptacion,
       }}
     >
