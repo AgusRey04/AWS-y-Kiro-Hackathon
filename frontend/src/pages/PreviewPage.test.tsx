@@ -40,25 +40,25 @@ const mockPlanificacion = {
 
 describe('PreviewPage', () => {
   it('muestra estado de carga', () => {
-    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: true, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: true, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('Cargando planificación...')).toBeInTheDocument();
   });
 
   it('muestra estado de error', () => {
-    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: 'Algo salió mal', loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: 'Algo salió mal', loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('Algo salió mal')).toBeInTheDocument();
   });
 
   it('muestra mensaje cuando no hay planificación', () => {
-    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('No hay planificación disponible.')).toBeInTheDocument();
   });
 
   it('muestra el header con datos de la planificación', () => {
-    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();
     expect(screen.getByText('PLANIFICACIÓN SEMANAL · NIVEL INICIAL')).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe('PreviewPage', () => {
   });
 
   it('muestra las 4 pestañas con Actividades como activa por defecto', () => {
-    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
 
     const actividadesTab = screen.getByRole('tab', { name: 'Actividades' });
@@ -79,7 +79,7 @@ describe('PreviewPage', () => {
   });
 
   it('cambia de pestaña al hacer click', () => {
-    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Materiales' }));
@@ -95,7 +95,7 @@ describe('PreviewPage', () => {
       adaptaciones: [],
       fundamentacion: '',
     };
-    mockUsePlan.mockReturnValue({ planificacion: emptyPlan, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: emptyPlan, isLoading: false, error: null, loadById: vi.fn(), updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
 
     expect(screen.getByText('No hay actividades disponibles para esta planificación.')).toBeInTheDocument();
@@ -112,14 +112,14 @@ describe('PreviewPage', () => {
 
   it('llama a loadById cuando el ID de la URL no coincide con la planificación en memoria', () => {
     const mockLoadById = vi.fn();
-    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: null, loadById: mockLoadById, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: null, isLoading: false, error: null, loadById: mockLoadById, updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(mockLoadById).toHaveBeenCalledWith('test-id');
   });
 
   it('no llama a loadById cuando la planificación en memoria ya tiene el mismo ID', () => {
     const mockLoadById = vi.fn();
-    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: mockLoadById, updateField: vi.fn(), addActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
+    mockUsePlan.mockReturnValue({ planificacion: mockPlanificacion, isLoading: false, error: null, loadById: mockLoadById, updateField: vi.fn(), addActividad: vi.fn(), deleteActividad: vi.fn(), addMaterial: vi.fn(), addAdaptacion: vi.fn() });
     render(<PreviewPage />);
     expect(mockLoadById).not.toHaveBeenCalled();
   });

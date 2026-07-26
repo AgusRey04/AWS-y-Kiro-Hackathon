@@ -196,6 +196,7 @@ interface DayCardProps {
 | GET | `/api/planificaciones/:id` | Obtener planificación completa | - |
 | POST | `/api/planificaciones/:id/actividades` | Agregar una actividad | `{dia, semana, titulo, descripcion}` |
 | PATCH | `/api/planificaciones/:id` | Actualizar campos editados | `{path, value}` |
+| DELETE | `/api/planificaciones/:id/actividades/:actividadId` | Eliminar una actividad | - |
 | DELETE | `/api/planificaciones/:id` | Eliminar planificación | - |
 | GET | `/api/datos-estaticos/efemerides` | Efemérides próximas | `?dias=7` |
 | GET | `/api/datos-estaticos/sugerencias` | Chips de sugerencia | - |
@@ -413,6 +414,7 @@ interface PlanContextValue {
   crear: (consigna: string) => Promise<void>;
   updateField: (path: string, value: string) => Promise<void>;
   addActividad: (input: { dia: string; semana: number; titulo: string; descripcion: string }) => Promise<Actividad>;
+  deleteActividad: (actividadId: string) => Promise<void>;
   addMaterial: () => void;
   addAdaptacion: () => void;
 }

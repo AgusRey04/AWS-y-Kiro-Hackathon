@@ -11,6 +11,7 @@ vi.mock('../contexts/PlanContext', () => ({
     crear: vi.fn(),
     updateField: vi.fn().mockResolvedValue(undefined),
     addActividad: vi.fn(),
+    deleteActividad: vi.fn(),
     addMaterial: vi.fn(),
     addAdaptacion: vi.fn(),
   }),

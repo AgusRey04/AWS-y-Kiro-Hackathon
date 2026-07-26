@@ -19,6 +19,7 @@ vi.mock('../contexts/PlanContext', () => ({
     crear: vi.fn(),
     updateField: vi.fn().mockResolvedValue(undefined),
     addActividad: vi.fn(),
+    deleteActividad: vi.fn().mockResolvedValue(undefined),
     addMaterial: vi.fn(),
     addAdaptacion: vi.fn(),
   }),
@@ -270,7 +271,15 @@ describe('Feature: edu-planner, Property 6 (extensión): botón único de agrega
 
         const cards = screen.queryAllByRole('listitem');
         cards.forEach((card) => {
-          expect(card.querySelector('button')).toBeNull();
+          // Dentro de una tarjeta solo puede haber botones de eliminar actividad:
+          // nunca botones de agregar (el de agregar es único y vive fuera del listado)
+          const etiquetas = Array.from(card.querySelectorAll('button')).map(
+            (b) => b.getAttribute('aria-label') ?? ''
+          );
+          etiquetas.forEach((label) => {
+            expect(label).toMatch(/^Eliminar actividad/);
+          });
+          expect(etiquetas.some((label) => label.includes('Agregar'))).toBe(false);
         });
 
         const variasSemanas = new Set(actividades.map((a) => a.semana)).size > 1;
@@ -281,6 +290,86 @@ describe('Feature: edu-planner, Property 6 (extensión): botón único de agrega
         );
 
         unmount();
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+describe('Feature: edu-planner, Property 6 (extensión): botón de eliminar por actividad', () => {
+  /**
+   * **Validates: Requirements 4.4**
+   *
+   * Para cualquier conjunto de actividades, la pestaña Actividades en modo edición
+   * SHALL renderizar exactamente un botón de eliminar por actividad, con una etiqueta
+   * accesible que identifique a esa actividad, y ninguno en modo lectura, sin alterar
+   * el agrupamiento por semana ni el orden lunes→viernes.
+   */
+
+  it('renders exactly one delete button per activity, labeled with its title', () => {
+    fc.assert(
+      fc.property(actividadesArb, (actividades) => {
+        const { unmount } = render(
+          <ActividadesTab actividades={actividades} planificacionId="plan-1" />
+        );
+
+        const botones = screen.queryAllByRole('button', { name: /^Eliminar actividad/ });
+        expect(botones).toHaveLength(actividades.length);
+
+        // Cada actividad tiene su propio botón, identificable por el título
+        actividades.forEach((a) => {
+          expect(
+            screen.getByRole('button', { name: `Eliminar actividad: ${a.titulo}` })
+          ).toBeInTheDocument();
+        });
+
+        // Y el agrupamiento (semana asc, día lunes→viernes) sigue intacto
+        const variasSemanas = new Set(actividades.map((a) => a.semana)).size > 1;
+        expect(
+          screen.queryAllByRole('listitem').map((card) => card.getAttribute('aria-label'))
+        ).toEqual(
+          gruposEsperados(actividades).map((g) =>
+            etiquetaEsperada(g.semana, g.dia, variasSemanas)
+          )
+        );
+
+        unmount();
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('never renders delete buttons in read-only mode (no planificacionId)', () => {
+    fc.assert(
+      fc.property(actividadesArb, (actividades) => {
+        const { unmount } = render(<ActividadesTab actividades={actividades} />);
+
+        expect(screen.queryAllByRole('button', { name: /^Eliminar actividad/ })).toHaveLength(0);
+
+        unmount();
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('the delete button never adds text to the card (activity texts stay unchanged)', () => {
+    fc.assert(
+      fc.property(actividadesArb, (actividades) => {
+        const soloLectura = render(<ActividadesTab actividades={actividades} />);
+        const textosLectura = screen
+          .queryAllByRole('listitem')
+          .map((card) => card.textContent);
+        soloLectura.unmount();
+
+        const edicion = render(
+          <ActividadesTab actividades={actividades} planificacionId="plan-1" />
+        );
+        const textosEdicion = screen
+          .queryAllByRole('listitem')
+          .map((card) => card.textContent);
+        edicion.unmount();
+
+        expect(textosEdicion).toEqual(textosLectura);
       }),
       { numRuns: 100 }
     );
