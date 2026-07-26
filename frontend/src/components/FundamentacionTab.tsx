@@ -37,6 +37,7 @@ export default function FundamentacionTab({ fundamentacion, planificacionId }: F
           planificacionId={planificacionId}
           className="text-sm font-quicksand text-text-dark leading-relaxed"
           as="div"
+          pencilSiempreVisible
         />
       ) : (
         <div className="text-sm font-quicksand text-text-dark leading-relaxed whitespace-pre-line">
