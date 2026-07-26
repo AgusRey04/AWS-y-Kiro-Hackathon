@@ -208,9 +208,9 @@ describe('Feature: edu-planner, Property 3: Suggestion chip insertion semantics'
         unmount();
         onChange.mockClear();
       }),
-      { numRuns: 30 }
+      { numRuns: 100 }
     );
-  }, 30000);
+  }, 120000);
 
   it('chip insertion via component: non-empty field appends with space', async () => {
     const existingTextArb = fc.string({ minLength: 1, maxLength: 100 }).filter(
@@ -238,9 +238,9 @@ describe('Feature: edu-planner, Property 3: Suggestion chip insertion semantics'
         unmount();
         onChange.mockClear();
       }),
-      { numRuns: 30 }
+      { numRuns: 100 }
     );
-  }, 30000);
+  }, 120000);
 });
 
 describe('Feature: edu-planner, Property 18: Suggestion chip count bounds', () => {

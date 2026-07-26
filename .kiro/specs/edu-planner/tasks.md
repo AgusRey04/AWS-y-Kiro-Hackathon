@@ -244,7 +244,7 @@ Implementación incremental de EduPlanner como SPA React + Vite con backend Node
     - Test responsive layouts from 320px width
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 4.9_
 
-- [ ] 13. Final checkpoint - Ensure all tests pass
+- [x] 13. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
