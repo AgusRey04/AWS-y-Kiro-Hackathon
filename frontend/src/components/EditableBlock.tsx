@@ -16,6 +16,13 @@ interface EditableBlockProps {
   planificacionId: string;
   className?: string;
   as?: 'p' | 'h3' | 'span' | 'div';
+  /**
+   * Cuando es `true`, el ícono de lápiz se muestra siempre, sin necesidad de
+   * tocar/hacer click en el bloque primero. El resto del comportamiento
+   * (activar edición al hacer click en el bloque o en el lápiz) no cambia.
+   * Default: `false` (comportamiento actual, lápiz oculto hasta interactuar).
+   */
+  pencilSiempreVisible?: boolean;
 }
 
 const DEBOUNCE_MS = 2000;
@@ -58,6 +65,7 @@ export default function EditableBlock({
   planificacionId,
   className = '',
   as: Tag = 'p',
+  pencilSiempreVisible = false,
 }: EditableBlockProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showPencil, setShowPencil] = useState(false);
@@ -228,7 +236,7 @@ export default function EditableBlock({
       )}
 
       {/* Pencil icon */}
-      {showPencil && !isEditing && (
+      {(pencilSiempreVisible || showPencil) && !isEditing && (
         <button
           onClick={(e) => {
             e.stopPropagation();

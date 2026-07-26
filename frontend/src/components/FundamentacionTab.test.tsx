@@ -46,4 +46,10 @@ describe('FundamentacionTab', () => {
     const container = screen.getByText(/Primera línea/);
     expect(container).toHaveClass('whitespace-pre-line');
   });
+
+  it('muestra el ícono de lápiz siempre visible sin interacción previa cuando hay planificacionId', () => {
+    const texto = 'Esta planificación se enmarca en el enfoque constructivista.';
+    render(<FundamentacionTab fundamentacion={texto} planificacionId="plan-1" />);
+    expect(screen.getByLabelText('Editar campo')).toBeInTheDocument();
+  });
 });

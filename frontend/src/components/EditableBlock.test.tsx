@@ -34,6 +34,27 @@ describe('EditableBlock', () => {
     expect(screen.getByLabelText('Editar campo')).toBeInTheDocument();
   });
 
+  it('sin pencilSiempreVisible el lápiz permanece oculto hasta interactuar (comportamiento por defecto)', () => {
+    render(<EditableBlock {...defaultProps} />);
+    expect(screen.queryByLabelText('Editar campo')).not.toBeInTheDocument();
+  });
+
+  it('con pencilSiempreVisible el lápiz está visible sin necesidad de click previo', () => {
+    render(<EditableBlock {...defaultProps} pencilSiempreVisible />);
+    expect(screen.getByLabelText('Editar campo')).toBeInTheDocument();
+  });
+
+  it('con pencilSiempreVisible se puede entrar en modo edición haciendo click en el lápiz sin click previo en el bloque', async () => {
+    render(<EditableBlock {...defaultProps} pencilSiempreVisible />);
+
+    const pencil = screen.getByLabelText('Editar campo');
+    fireEvent.click(pencil);
+
+    const textarea = screen.getByLabelText('Editar title');
+    expect(textarea).toBeInTheDocument();
+    expect(textarea).toHaveValue('Contenido de prueba');
+  });
+
   it('entra en modo edición al hacer click en el lápiz', async () => {
     render(<EditableBlock {...defaultProps} />);
     const block = screen.getByRole('button');
