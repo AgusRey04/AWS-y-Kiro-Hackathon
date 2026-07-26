@@ -754,3 +754,119 @@ describe('POST /api/planificaciones/:id/actividades', () => {
     expect(res.body.code).toBe('INTERNAL_ERROR');
   });
 });
+
+describe('DELETE /api/planificaciones/:id/actividades/:actividadId', () => {
+  const validToken = 'Bearer valid-token';
+  const userId = 'user-uuid-123';
+  const planId = 'plan-uuid-1';
+  const actividadId = 'act-uuid-1';
+  const endpoint = `/api/planificaciones/${planId}/actividades/${actividadId}`;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockResolvedValue({
+      success: true,
+      data: { id: userId },
+    } as any);
+  });
+
+  it('should return 401 when no token is provided', async () => {
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint);
+
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHORIZED');
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should return 401 when token is invalid', async () => {
+    mockVerifyToken.mockResolvedValueOnce({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Token inválido' },
+    } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, {
+      Authorization: 'Bearer invalid-token',
+    });
+
+    expect(res.status).toBe(401);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should delete only that actividad and return success (happy path)', async () => {
+    // 1) ownership check
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    // 2) delete
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ success: true });
+
+    // Ownership validado ANTES de borrar
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('WHERE id = $1 AND usuario_id = $2'),
+      [planId, userId]
+    );
+
+    // Borra solo esa actividad, acotada a la planificación
+    expect(mockQuery).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('DELETE FROM actividad WHERE id = $1 AND planificacion_id = $2'),
+      [actividadId, planId]
+    );
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+  });
+
+  it('should return 404 when the planificación belongs to another user', async () => {
+    // Ownership check devuelve vacío
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+    expect(res.body.message).toBe('Planificación no encontrada.');
+    // No debe borrar nada
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return 404 when the actividad does not exist in that planificación', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+    expect(res.body.message).toBe('Actividad no encontrada.');
+  });
+
+  it('should return 500 when the database fails', async () => {
+    mockQuery.mockRejectedValueOnce(new Error('DB connection lost'));
+
+    const app = createApp();
+    const res = await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    expect(res.status).toBe(500);
+    expect(res.body.code).toBe('INTERNAL_ERROR');
+  });
+
+  it('should not be captured by DELETE /:id (the planificación is not deleted)', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: planId }], rowCount: 1 } as any);
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+
+    const app = createApp();
+    await request(app, 'DELETE', endpoint, { Authorization: validToken });
+
+    const sqls = mockQuery.mock.calls.map((call) => String(call[0]));
+    expect(sqls.some((sql) => sql.includes('DELETE FROM planificacion'))).toBe(false);
+    expect(sqls.some((sql) => sql.includes('DELETE FROM material'))).toBe(false);
+  });
+});

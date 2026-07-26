@@ -450,6 +450,60 @@ planificacionesRoutes.post('/:id/actividades', async (req: Request, res: Respons
 });
 
 /**
+ * DELETE /api/planificaciones/:id/actividades/:actividadId
+ * Delete a single actividad from a planificación owned by the authenticated user.
+ * - 404 si la planificación no existe o no pertenece al usuario
+ * - 404 si la actividad no existe dentro de esa planificación
+ * - 200 con { data: { success: true } } al borrar
+ *
+ * Nota: se declara antes de `DELETE /:id` por claridad de lectura; Express no
+ * confunde ambas rutas porque tienen distinta cantidad de segmentos.
+ */
+planificacionesRoutes.delete('/:id/actividades/:actividadId', async (req: Request, res: Response) => {
+  await authMiddleware(req, res, async () => {
+    try {
+      const user = (req as Request & { user: { id: string } }).user;
+      const { id, actividadId } = req.params;
+
+      // Verify planificación belongs to user BEFORE deleting anything
+      const planCheck = await query(
+        'SELECT id FROM planificacion WHERE id = $1 AND usuario_id = $2',
+        [id, user.id]
+      );
+
+      if (planCheck.rows.length === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Planificación no encontrada.',
+        });
+        return;
+      }
+
+      const deleteResult = await query(
+        'DELETE FROM actividad WHERE id = $1 AND planificacion_id = $2',
+        [actividadId, id]
+      );
+
+      if (deleteResult.rowCount === 0) {
+        res.status(404).json({
+          code: ApiErrorCode.NOT_FOUND,
+          message: 'Actividad no encontrada.',
+        });
+        return;
+      }
+
+      res.status(200).json({ data: { success: true } });
+    } catch (error) {
+      console.error('Actividad delete error:', error);
+      res.status(500).json({
+        code: ApiErrorCode.INTERNAL_ERROR,
+        message: 'Error interno del servidor',
+      });
+    }
+  });
+});
+
+/**
  * PATCH /api/planificaciones/:id
  * Update a specific field of a planificación.
  * Body: { path: string, value: string }

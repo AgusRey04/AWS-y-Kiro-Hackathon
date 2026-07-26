@@ -300,3 +300,133 @@ describe('ActividadesTab + PlanContext (integración con MSW)', () => {
     expect(llamadas).toBe(2);
   });
 });
+
+/**
+ * Integración: botón de tacho + confirmación + PlanContext + endpoint
+ * DELETE /api/planificaciones/:id/actividades/:actividadId (mockeado con MSW).
+ */
+describe('ActividadesTab + PlanContext: eliminar actividad (integración con MSW)', () => {
+  const PLAN_DOS_ACTIVIDADES = {
+    ...MOCK_PLAN,
+    actividades: [
+      { id: 'act-1', semana: 1, dia: 'lunes', titulo: 'Ronda inicial', descripcion: 'Presentación', orden: 1 },
+      { id: 'act-2', semana: 1, dia: 'martes', titulo: 'Pintura libre', descripcion: 'Témperas', orden: 1 },
+    ],
+  };
+
+  beforeEach(() => {
+    localStorage.setItem('token', 'token-de-prueba');
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('borra la actividad end-to-end: llama al endpoint y la quita del preview', async () => {
+    let urlLlamada: string | null = null;
+    let metodoLlamado: string | null = null;
+    let authRecibido: string | null = null;
+
+    server.use(
+      http.get(`/api/planificaciones/${PLAN_ID}`, () =>
+        HttpResponse.json({ data: PLAN_DOS_ACTIVIDADES })
+      ),
+      http.delete(
+        `/api/planificaciones/${PLAN_ID}/actividades/:actividadId`,
+        ({ request }) => {
+          urlLlamada = new URL(request.url).pathname;
+          metodoLlamado = request.method;
+          authRecibido = request.headers.get('Authorization');
+          return HttpResponse.json({ data: { success: true } });
+        }
+      )
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Pintura libre' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    expect(metodoLlamado).toBe('DELETE');
+    expect(urlLlamada).toBe(`/api/planificaciones/${PLAN_ID}/actividades/act-2`);
+    expect(authRecibido).toBe('Bearer token-de-prueba');
+
+    // La actividad desapareció y la tarjeta del martes ya no se renderiza
+    expect(screen.queryByText('Pintura libre')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Actividades del Martes')).not.toBeInTheDocument();
+    const cards = screen.getAllByRole('listitem');
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toHaveAttribute('aria-label', 'Actividades del Lunes');
+  });
+
+  it('muestra el estado vacío cuando se borra la última actividad', async () => {
+    server.use(
+      http.get(`/api/planificaciones/${PLAN_ID}`, () => HttpResponse.json({ data: MOCK_PLAN })),
+      http.delete(`/api/planificaciones/${PLAN_ID}/actividades/:actividadId`, () =>
+        HttpResponse.json({ data: { success: true } })
+      )
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Ronda inicial' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    expect(
+      await screen.findByText('No hay actividades disponibles para esta planificación.')
+    ).toBeInTheDocument();
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+  });
+
+  it('muestra el error del endpoint, no borra nada y permite reintentar', async () => {
+    let llamadas = 0;
+    server.use(
+      http.get(`/api/planificaciones/${PLAN_ID}`, () =>
+        HttpResponse.json({ data: PLAN_DOS_ACTIVIDADES })
+      ),
+      http.delete(`/api/planificaciones/${PLAN_ID}/actividades/:actividadId`, () => {
+        llamadas += 1;
+        if (llamadas === 1) {
+          return HttpResponse.json(
+            { code: 'INTERNAL_ERROR', message: 'Error interno del servidor' },
+            { status: 500 }
+          );
+        }
+        return HttpResponse.json({ data: { success: true } });
+      })
+    );
+
+    renderHarness();
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(screen.getByText('Ronda inicial')).toBeInTheDocument());
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Pintura libre' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Error interno del servidor');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Pintura libre')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByText('Pintura libre')).not.toBeInTheDocument();
+    expect(llamadas).toBe(2);
+  });
+});

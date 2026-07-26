@@ -5,6 +5,7 @@ import ActividadesTab from './ActividadesTab';
 import type { Actividad } from '../types';
 
 const mockAddActividad = vi.fn().mockResolvedValue(undefined);
+const mockDeleteActividad = vi.fn().mockResolvedValue(undefined);
 
 // Mock PlanContext
 vi.mock('../contexts/PlanContext', () => ({
@@ -15,6 +16,7 @@ vi.mock('../contexts/PlanContext', () => ({
     crear: vi.fn(),
     updateField: vi.fn().mockResolvedValue(undefined),
     addActividad: mockAddActividad,
+    deleteActividad: mockDeleteActividad,
     addMaterial: vi.fn(),
     addAdaptacion: vi.fn(),
   }),
@@ -97,7 +99,12 @@ describe('ActividadesTab', () => {
   it('no muestra botones de agregar dentro de las DayCards', () => {
     render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
     screen.getAllByRole('listitem').forEach((card) => {
-      expect(card.querySelector('button')).toBeNull();
+      // Los únicos botones dentro de una tarjeta son los de eliminar actividad
+      const etiquetas = Array.from(card.querySelectorAll('button')).map((b) =>
+        b.getAttribute('aria-label') ?? ''
+      );
+      expect(etiquetas.every((label) => label.startsWith('Eliminar actividad'))).toBe(true);
+      expect(etiquetas.some((label) => label.includes('Agregar'))).toBe(false);
     });
   });
 
@@ -233,5 +240,121 @@ describe('ActividadesTab - agrupamiento por semana', () => {
   it('separa el mismo día en tarjetas distintas por semana', () => {
     render(<ActividadesTab actividades={multiSemana} />);
     expect(screen.getAllByRole('listitem')).toHaveLength(4);
+  });
+});
+
+describe('ActividadesTab - eliminar actividad', () => {
+  beforeEach(() => {
+    mockDeleteActividad.mockClear();
+    mockDeleteActividad.mockResolvedValue(undefined);
+  });
+
+  it('muestra un botón de eliminar por actividad con aria-label que incluye el título', () => {
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    const botones = screen.getAllByRole('button', { name: /^Eliminar actividad/ });
+    expect(botones).toHaveLength(mockActividades.length);
+
+    expect(
+      screen.getByRole('button', { name: 'Eliminar actividad: Paseo por el patio' })
+    ).toBeInTheDocument();
+  });
+
+  it('usa "actividad sin título" en el aria-label cuando el título está vacío', () => {
+    const sinTitulo: Actividad[] = [
+      { id: 'x', semana: 1, dia: 'lunes', titulo: '   ', descripcion: 'Desc', orden: 1 },
+    ];
+    render(<ActividadesTab actividades={sinTitulo} planificacionId="plan-1" />);
+
+    expect(
+      screen.getByRole('button', { name: 'Eliminar actividad sin título' })
+    ).toBeInTheDocument();
+  });
+
+  it('no muestra botones de eliminar en modo lectura (sin planificacionId)', () => {
+    render(<ActividadesTab actividades={mockActividades} />);
+    expect(screen.queryByRole('button', { name: /^Eliminar actividad/ })).not.toBeInTheDocument();
+  });
+
+  it('el botón de eliminar tiene un área táctil de al menos 44x44', () => {
+    render(<ActividadesTab actividades={[mockActividades[0]]} planificacionId="plan-1" />);
+    const boton = screen.getByRole('button', { name: /^Eliminar actividad/ });
+    expect(boton.className).toContain('min-w-[44px]');
+    expect(boton.className).toContain('min-h-[44px]');
+  });
+
+  it('abre un diálogo de confirmación accesible y enfoca Cancelar', async () => {
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Paseo por el patio' })
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(dialog.textContent).toContain('Paseo por el patio');
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus();
+    expect(mockDeleteActividad).not.toHaveBeenCalled();
+  });
+
+  it('cancelar cierra el diálogo y no borra', async () => {
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Paseo por el patio' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mockDeleteActividad).not.toHaveBeenCalled();
+  });
+
+  it('Escape cierra el diálogo y no borra', async () => {
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Pintura libre' })
+    );
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mockDeleteActividad).not.toHaveBeenCalled();
+  });
+
+  it('confirmar llama a deleteActividad con el id de la actividad y cierra el diálogo', async () => {
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Ronda de cuentos' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() => expect(mockDeleteActividad).toHaveBeenCalledWith('3'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('muestra una alerta con opción de reintentar cuando el borrado falla', async () => {
+    mockDeleteActividad.mockRejectedValueOnce(new Error('Actividad no encontrada.'));
+    const user = userEvent.setup();
+    render(<ActividadesTab actividades={mockActividades} planificacionId="plan-1" />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Eliminar actividad: Cierre semanal' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Actividad no encontrada.');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Reintento exitoso
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+    await waitFor(() => expect(mockDeleteActividad).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });
