@@ -7,6 +7,7 @@ import {
   GeminiServiceError,
 } from './gemini.service.js';
 import { buscarImagenUnsplash } from './unsplash.service.js';
+import { guardarImagenEnS3 } from './s3.service.js';
 
 /**
  * Custom error for planificacion service operations.
@@ -63,7 +64,10 @@ export async function crear(
   const respuesta = await generarPlanificacion(consigna.trim());
 
   // Buscar imagen representativa en Unsplash (no bloquea si falla)
-  const imagenUrl = await buscarImagenUnsplash(respuesta.titulo);
+  const imagenUnsplash = await buscarImagenUnsplash(respuesta.titulo);
+
+  // Guardar una copia propia en S3 para no depender del link externo de Unsplash
+  const imagenUrl = imagenUnsplash ? await guardarImagenEnS3(imagenUnsplash) : null;
 
   // Determine category
   const fecha = new Date();
