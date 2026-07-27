@@ -45,17 +45,12 @@ export function buscarEfemeridesCercanas(fecha: Date): Efemeride[] {
 }
 
 /**
- * Build the prompt for Gemini API including curricular context,
- * season, and nearby ephemerides.
+ * Build the prompt for Gemini API including curricular context
+ * and nearby ephemerides.
  */
 export function construirPrompt(consigna: string, fecha: Date): string {
-  //const estacion = obtenerEstacion(fecha);
   const efemeridesCercanas = buscarEfemeridesCercanas(fecha);
 
-  // const estacionData = datosEstaticos.estaciones.find(
-  //   (e: { nombre: string }) => e.nombre === estacion
-  // );
-//Estamos en ${estacion} (hemisferio sur).
   let prompt = `Sos una experta en educación de nivel inicial en la provincia de Santa Fe, Argentina.
 Tu tarea es generar una planificación semanal completa para una docente de jardín de infantes.
 
@@ -68,7 +63,7 @@ Tu tarea es generar una planificación semanal completa para una docente de jard
 ## Consigna de la docente
 "${consigna}"
 
-## Estación del año actual
+## Fecha de referencia
 La fecha de hoy es ${fecha.toISOString().split('T')[0]}.`;
 
   if (efemeridesCercanas.length > 0) {
@@ -92,7 +87,8 @@ La fecha de hoy es ${fecha.toISOString().split('T')[0]}.`;
 8. Incluí adaptaciones de inclusión para necesidades educativas específicas.
 9. Escribí una fundamentación pedagógica que sustente la planificación.
 10. Todo el contenido debe ser apropiado para niños de 3 a 5 años.
-11. Las actividades deben ser variadas y lúdicas .`;
+11. Las actividades deben ser variadas y lúdicas.
+12. NO menciones la estación del año en el título ni en las actividades salvo que la docente lo pida explícitamente en su consigna.`;
 
   return prompt;
 }
