@@ -182,7 +182,7 @@ export default function ActividadesTab({ actividades, planificacionId }: Activid
   return (
     <div>
       <div
-        className="timeline-list space-y-4 pl-10"
+        className="timeline-list space-y-4 pl-7 sm:pl-10"
         role="list"
         aria-label="Actividades por semana y día"
       >
@@ -340,7 +340,7 @@ function DayCard({
 }: DayCardProps) {
   return (
     <article
-      className="timeline-item relative bg-[#F7F6F2] rounded-xl rounded-l-md px-6 py-5"
+      className="timeline-item relative bg-[#F7F6F2] rounded-xl rounded-l-md px-4 py-4 sm:px-6 sm:py-5"
       style={{ borderLeftWidth: '4px', borderLeftColor: color }}
       role="listitem"
       aria-label={etiqueta ?? `Actividades del ${dia}`}
@@ -361,7 +361,7 @@ function DayCard({
                     type="title"
                     fieldPath={`actividades.${actividad.id}.titulo`}
                     planificacionId={planificacionId}
-                    className="text-xl font-semibold font-quicksand text-text-dark leading-snug"
+                    className="text-lg sm:text-xl font-semibold font-quicksand text-text-dark leading-snug"
                     as="p"
                   />
                   <EditableBlock
@@ -371,7 +371,7 @@ function DayCard({
                     type="description"
                     fieldPath={`actividades.${actividad.id}.descripcion`}
                     planificacionId={planificacionId}
-                    className="text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed"
+                    className="text-sm sm:text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed"
                     as="p"
                   />
                 </div>
@@ -390,10 +390,10 @@ function DayCard({
               </div>
             ) : (
               <>
-                <p className="text-xl font-semibold font-quicksand text-text-dark leading-snug">
+                <p className="text-lg sm:text-xl font-semibold font-quicksand text-text-dark leading-snug">
                   {actividad.titulo}
                 </p>
-                <p className="text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed">
+                <p className="text-sm sm:text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed">
                   {actividad.descripcion}
                 </p>
               </>
