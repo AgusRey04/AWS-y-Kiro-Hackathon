@@ -4,7 +4,7 @@
 
 App mobile-first para docentes de **nivel inicial (jardín de infantes) de Santa Fe, Argentina**. A partir de una consigna dictada por voz o escrita ("esta semana trabajamos el otoño con sala de 4"), genera una planificación semanal completa —actividades diarias, materiales, adaptaciones de inclusión y fundamentación pedagógica— alineada con el Diseño Curricular provincial, lista para editar, imprimir o exportar a PDF.
 
-> 🔗 **Demo en línea**: `<URL de producción en Vercel>`
+> 🔗 **Demo en línea**: [aws-y-kiro-hackathon-git-deploy-reymundez37-6283s-projects.vercel.app](https://aws-y-kiro-hackathon-git-deploy-reymundez37-6283s-projects.vercel.app/)
 
 ## Funcionalidades
 
