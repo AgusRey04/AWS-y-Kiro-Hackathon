@@ -61,17 +61,17 @@ export default function AdaptacionesTab({ adaptaciones, planificacionId }: Adapt
   const sorted = [...adaptaciones].sort((a, b) => a.orden - b.orden);
 
   return (
-    <div className="rounded-2xl bg-lavanda/20 p-4 sm:p-5">
+    <div className="rounded-2xl bg-lavanda/20 p-3.5 sm:p-5">
       {/* Encabezado de la sección */}
-      <div className="flex items-start gap-3.5 mb-6">
-        <span className="shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-lavanda text-white">
-          <PeopleIcon className="w-[22px] h-[22px]" />
+      <div className="flex items-start gap-3 sm:gap-3.5 mb-5 sm:mb-6">
+        <span className="shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-lavanda text-white">
+          <PeopleIcon className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
         </span>
         <div>
-          <h3 className="text-xl font-semibold font-quicksand text-lavanda">
+          <h3 className="text-lg sm:text-xl font-semibold font-quicksand text-lavanda">
             Estrategias de Inclusión
           </h3>
-          <p className="text-[15px] font-quicksand text-text-muted mt-0.5">
+          <p className="text-sm sm:text-[15px] font-quicksand text-text-muted mt-0.5">
             Sugerencias para asegurar la participación de todo el alumnado.
           </p>
         </div>
@@ -81,7 +81,7 @@ export default function AdaptacionesTab({ adaptaciones, planificacionId }: Adapt
         {sorted.map((adaptacion) => (
           <article
             key={adaptacion.id}
-            className="rounded-xl p-5 bg-[#9B89B3]/15"
+            className="rounded-xl p-4 sm:p-5 bg-[#9B89B3]/15"
             role="listitem"
             aria-label={adaptacion.titulo}
           >
@@ -98,7 +98,7 @@ export default function AdaptacionesTab({ adaptaciones, planificacionId }: Adapt
                   type="title"
                   fieldPath={`adaptaciones.${adaptacion.id}.titulo`}
                   planificacionId={planificacionId}
-                  className="text-[15px] font-semibold font-quicksand text-text-dark"
+                  className="text-sm sm:text-[15px] font-semibold font-quicksand text-text-dark"
                   as="h3"
                 />
                 <EditableBlock
@@ -108,16 +108,16 @@ export default function AdaptacionesTab({ adaptaciones, planificacionId }: Adapt
                   type="description"
                   fieldPath={`adaptaciones.${adaptacion.id}.descripcion`}
                   planificacionId={planificacionId}
-                  className="text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed"
+                  className="text-sm sm:text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed"
                   as="p"
                 />
               </>
             ) : (
               <>
-                <h3 className="text-[15px] font-bold font-quicksand text-text-dark">
+                <h3 className="text-sm sm:text-[15px] font-bold font-quicksand text-text-dark">
                   {adaptacion.titulo}
                 </h3>
-                <p className="text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed">
+                <p className="text-sm sm:text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed">
                   {adaptacion.descripcion}
                 </p>
               </>

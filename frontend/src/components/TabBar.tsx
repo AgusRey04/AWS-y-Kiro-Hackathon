@@ -58,7 +58,7 @@ const TAB_ICONS: Record<string, (props: IconProps) => React.ReactElement> = {
 export default function TabBar({ tabs, activeTab, onTabChange }: TabBarProps) {
   return (
     <nav
-      className="flex gap-1 overflow-x-auto px-2 -mb-px"
+      className="flex flex-wrap gap-1 px-1 sm:px-2 -mb-px sm:flex-nowrap sm:overflow-x-auto"
       role="tablist"
       aria-label="Secciones de la planificación"
     >
@@ -75,7 +75,8 @@ export default function TabBar({ tabs, activeTab, onTabChange }: TabBarProps) {
             id={`tab-${tab.id}`}
             onClick={() => onTabChange(tab.id)}
             className={`
-              flex items-center gap-2 shrink-0 px-5 py-3.5 text-[15px] font-semibold font-quicksand
+              flex items-center gap-1.5 sm:gap-2 shrink-0 px-3 py-2.5 text-[13px]
+              sm:px-5 sm:py-3.5 sm:text-[15px] font-semibold font-quicksand
               whitespace-nowrap rounded-t-xl transition-colors focus:outline-none
               focus-visible:ring-2 focus-visible:ring-green-primary
               ${
@@ -85,7 +86,7 @@ export default function TabBar({ tabs, activeTab, onTabChange }: TabBarProps) {
               }
             `}
           >
-            {Icon && <Icon className="w-4 h-4" />}
+            {Icon && <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />}
             {tab.label}
           </button>
         );

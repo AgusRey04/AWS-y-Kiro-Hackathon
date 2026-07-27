@@ -101,7 +101,7 @@ export default function PreviewPage() {
 
   return (
     <div className="flex flex-col min-h-full bg-bg-cream overflow-x-hidden">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-8 pt-6">
+      <div className="mx-auto w-full max-w-6xl px-3 sm:px-8 pt-4 sm:pt-6">
         <PreviewHeader
           titulo={planificacion.titulo}
           fechaInicio={planificacion.fechaInicio}
@@ -111,14 +111,14 @@ export default function PreviewPage() {
         />
 
         {/* Pestañas sobre el panel de contenido */}
-        <div className="mt-7">
+        <div className="mt-5 sm:mt-7">
           <TabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
           <div
             id={`tabpanel-${activeTab}`}
             role="tabpanel"
             aria-labelledby={`tab-${activeTab}`}
-            className="bg-white rounded-2xl rounded-tl-none border border-border-light shadow-sm p-5 sm:p-7"
+            className="bg-white rounded-2xl rounded-tl-none border border-border-light shadow-sm p-3.5 sm:p-7"
           >
             <TabContent tabId={activeTab} planificacion={planificacion} />
           </div>
@@ -127,7 +127,7 @@ export default function PreviewPage() {
 
       {/* Barra de acciones */}
       <div className="sticky bottom-0 z-20 mt-6 border-t border-border-light bg-bg-cream/95 backdrop-blur-sm">
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-8 py-5 flex flex-col gap-3">
+        <div className="mx-auto w-full max-w-6xl px-3 sm:px-8 py-3.5 sm:py-5 flex flex-col gap-3">
           {pdfError && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
               <p className="text-red-600 font-quicksand text-sm">{pdfError}</p>
@@ -141,29 +141,29 @@ export default function PreviewPage() {
           )}
 
           {!confirmDelete ? (
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
               <button
                 onClick={handleDownloadPdf}
-                className="inline-flex items-center justify-center gap-2.5 bg-mostaza text-white font-bold font-quicksand text-[15px] tracking-wide uppercase rounded-full px-8 py-3.5 min-h-[52px] shadow-md shadow-mostaza/30 hover:brightness-105 active:scale-95 transition-all"
+                className="flex-1 min-w-[140px] sm:flex-none inline-flex items-center justify-center gap-2 sm:gap-2.5 bg-mostaza text-white font-bold font-quicksand text-[13px] sm:text-[15px] tracking-wide uppercase rounded-full px-4 sm:px-8 py-3 sm:py-3.5 min-h-[48px] sm:min-h-[52px] shadow-md shadow-mostaza/30 hover:brightness-105 active:scale-95 transition-all"
                 aria-label="Descargar PDF"
               >
-                <PdfIcon className="w-5 h-5" />
+                <PdfIcon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                 Descargar PDF
               </button>
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center justify-center gap-2.5 bg-green-dark text-white font-bold font-quicksand text-[15px] tracking-wide uppercase rounded-full px-8 py-3.5 min-h-[52px] shadow-md shadow-green-dark/25 hover:brightness-110 active:scale-95 transition-all"
+                className="flex-1 min-w-[140px] sm:flex-none inline-flex items-center justify-center gap-2 sm:gap-2.5 bg-green-dark text-white font-bold font-quicksand text-[13px] sm:text-[15px] tracking-wide uppercase rounded-full px-4 sm:px-8 py-3 sm:py-3.5 min-h-[48px] sm:min-h-[52px] shadow-md shadow-green-dark/25 hover:brightness-110 active:scale-95 transition-all"
                 aria-label="Imprimir"
               >
-                <PrinterIcon className="w-5 h-5" />
+                <PrinterIcon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                 Imprimir
               </button>
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="inline-flex items-center justify-center gap-2 border border-red-300 text-red-500 font-semibold font-quicksand text-[15px] rounded-full px-6 py-3.5 min-h-[52px] hover:bg-red-50 active:scale-95 transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-red-300 text-red-500 font-semibold font-quicksand text-[13px] sm:text-[15px] rounded-full px-6 py-3 sm:py-3.5 min-h-[48px] sm:min-h-[52px] hover:bg-red-50 active:scale-95 transition-all"
                 aria-label="Eliminar planificación"
               >
-                <TrashIcon className="w-4 h-4" />
+                <TrashIcon className="w-4 h-4 shrink-0" />
                 Eliminar
               </button>
             </div>

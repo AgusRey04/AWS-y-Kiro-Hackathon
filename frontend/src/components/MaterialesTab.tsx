@@ -127,15 +127,15 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
   return (
     <div>
       {/* Encabezado de la sección */}
-      <div className="flex items-start gap-3.5 mb-6">
-        <span className="shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-mostaza/70 text-white">
-          <CartIcon className="w-[22px] h-[22px]" />
+      <div className="flex items-start gap-3 sm:gap-3.5 mb-5 sm:mb-6">
+        <span className="shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-mostaza/70 text-white">
+          <CartIcon className="w-5 h-5 sm:w-[22px] sm:h-[22px]" />
         </span>
         <div>
-          <h3 className="text-xl font-semibold font-quicksand text-text-dark">
+          <h3 className="text-lg sm:text-xl font-semibold font-quicksand text-text-dark">
             Lista de Recursos
           </h3>
-          <p className="text-[15px] font-quicksand text-text-muted mt-0.5">
+          <p className="text-sm sm:text-[15px] font-quicksand text-text-muted mt-0.5">
             Prepará con antelación para asegurar el fluir de la semana.
           </p>
         </div>
@@ -145,7 +145,7 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
         {sorted.map((material) => (
           <li
             key={material.id}
-            className="bg-[#F7F6F2] rounded-xl border border-border-light/60 px-5 py-4 flex items-center gap-3"
+            className="bg-[#F7F6F2] rounded-xl border border-border-light/60 px-4 py-3.5 sm:px-5 sm:py-4 flex items-center gap-3"
           >
             <span className="text-2xl flex-shrink-0" aria-hidden="true">
               {material.icono}
@@ -159,7 +159,7 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
                   type="title"
                   fieldPath={`materiales.${material.id}.nombre`}
                   planificacionId={planificacionId}
-                  className="text-[15px] font-medium font-quicksand text-text-dark flex-1"
+                  className="text-sm sm:text-[15px] font-medium font-quicksand text-text-dark flex-1 min-w-0 break-words"
                   as="span"
                 />
                 <button
@@ -174,7 +174,7 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
                 </button>
               </>
             ) : (
-              <span className="text-[15px] font-medium font-quicksand text-text-dark">
+              <span className="text-sm sm:text-[15px] font-medium font-quicksand text-text-dark min-w-0 break-words">
                 {material.nombre}
               </span>
             )}

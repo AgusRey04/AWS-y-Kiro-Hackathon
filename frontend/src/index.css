@@ -45,3 +45,17 @@ body {
 .timeline-item:last-child::after {
   display: none;
 }
+
+/* En pantallas chicas la canaleta de la línea de tiempo es más angosta */
+@media (max-width: 639px) {
+  .timeline-item::before {
+    left: -1.6rem;
+    top: 0.65rem;
+    font-size: 0.65rem;
+  }
+
+  .timeline-item::after {
+    left: -1.05rem;
+    top: 1.7rem;
+  }
+}
