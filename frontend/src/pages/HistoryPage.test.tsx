@@ -242,8 +242,8 @@ describe('HistoryPage', () => {
         const url = new URL(request.url);
         const filtro = url.searchParams.get('filtro');
 
-        if (filtro === 'proyectos') {
-          return HttpResponse.json({ data: [mockPlans[2]] });
+        if (filtro === 'recientes') {
+          return HttpResponse.json({ data: [mockPlans[0]] });
         }
         return HttpResponse.json({ data: mockPlans });
       })
@@ -255,16 +255,16 @@ describe('HistoryPage', () => {
       expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();
     });
 
-    // Activate Proyectos filter
-    const proyectosChip = screen.getByRole('button', { name: 'Proyectos' });
-    fireEvent.click(proyectosChip);
+    // Activate Recientes filter
+    const recientesChip = screen.getByRole('button', { name: 'Recientes' });
+    fireEvent.click(recientesChip);
 
     await waitFor(() => {
-      expect(screen.getByText('Proyecto huerta escolar')).toBeInTheDocument();
+      expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();
     });
 
     // Deactivate filter
-    fireEvent.click(proyectosChip);
+    fireEvent.click(recientesChip);
 
     await waitFor(() => {
       expect(screen.getByText('Explorando el otoño')).toBeInTheDocument();

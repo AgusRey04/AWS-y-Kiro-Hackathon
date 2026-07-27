@@ -132,8 +132,6 @@ function FilterChips({
 }) {
   const filters: { id: Filtro; label: string }[] = [
     { id: 'recientes', label: 'Recientes' },
-    { id: 'efemerides', label: 'Efemérides' },
-    { id: 'proyectos', label: 'Proyectos' },
     { id: 'archivado', label: 'Archivados' },
   ];
 
