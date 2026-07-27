@@ -69,7 +69,90 @@ graph TB
 - **PDF client-side**: sin servicio de renderizado en el backend.
 - **Copia propia en S3**: la app no depende de que Unsplash mantenga viva cada URL.
 
-**Modelo de datos**: `usuario → planificacion → {actividad, material, adaptacion}` (relaciones 1-a-muchos). Ver migraciones en [`backend/src/db/migrations`](backend/src/db/migrations).
+### Flujo principal
+
+```mermaid
+sequenceDiagram
+    participant U as Usuaria
+    participant FE as Frontend
+    participant BE as Backend API
+    participant AI as Gemini API
+
+    U->>FE: Ingresa consigna (voz/texto)
+    U->>FE: Presiona CREAR
+    FE->>BE: POST /api/planificaciones {consigna, context}
+    BE->>AI: generateContent(prompt + schema)
+    AI-->>BE: JSON estructurado
+    BE->>BE: Valida y persiste
+    BE-->>FE: Planificación completa
+    FE->>FE: Renderiza Preview
+    U->>FE: Edita contenido inline
+    FE->>BE: PATCH /api/planificaciones/:id
+    U->>FE: Descarga PDF
+    FE->>FE: jsPDF genera documento
+```
+
+### Modelo de datos
+
+```mermaid
+erDiagram
+    USUARIO {
+        uuid id PK
+        string nombre
+        string escuela
+        string email UK
+        string password_hash
+        timestamp created_at
+        timestamp updated_at
+    }
+    PLANIFICACION {
+        uuid id PK
+        uuid usuario_id FK
+        string titulo
+        string consigna_original
+        date fecha_inicio
+        date fecha_fin
+        string_array objetivos
+        string area_curricular
+        string ambito_experiencia
+        string fundamentacion
+        string categoria "recientes|efemerides|proyectos"
+        string imagen_url
+        timestamp created_at
+        timestamp updated_at
+    }
+    ACTIVIDAD {
+        uuid id PK
+        uuid planificacion_id FK
+        int semana "NOT NULL DEFAULT 1, CHECK >= 1"
+        string dia "lunes|martes|miercoles|jueves|viernes"
+        string titulo
+        string descripcion
+        int orden
+    }
+    MATERIAL {
+        uuid id PK
+        uuid planificacion_id FK
+        string nombre
+        string icono
+        int orden
+    }
+    ADAPTACION {
+        uuid id PK
+        uuid planificacion_id FK
+        string categoria
+        string titulo
+        string descripcion
+        int orden
+    }
+
+    USUARIO ||--o{ PLANIFICACION : "crea"
+    PLANIFICACION ||--|{ ACTIVIDAD : "contiene"
+    PLANIFICACION ||--o{ MATERIAL : "requiere"
+    PLANIFICACION ||--o{ ADAPTACION : "incluye"
+```
+
+Migraciones SQL en [`backend/src/db/migrations`](backend/src/db/migrations).
 
 ## Estructura del repo
 
@@ -114,15 +197,53 @@ npm run dev             # http://localhost:5173, proxea /api al backend
 
 Todo bajo `/api`; las rutas de `planificaciones` requieren `Authorization: Bearer <token>`.
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| POST | `/api/auth/register`, `/api/auth/login` | Registro / login |
-| POST | `/api/planificaciones` | Crea una planificación vía IA (Gemini + Unsplash + S3) |
-| GET | `/api/planificaciones` | Historial (`?filtro=recientes\|efemerides\|proyectos`) |
-| GET / PATCH / DELETE | `/api/planificaciones/:id` | Detalle, edición inline, borrado |
-| POST / DELETE | `/api/planificaciones/:id/actividades(/:id)` | Actividades |
-| POST / DELETE | `/api/planificaciones/:id/materiales(/:id)` | Materiales |
-| GET | `/api/datos-estaticos/efemerides`, `/sugerencias` | Datos contextuales |
+| Método | Ruta | Descripción | Body/Params |
+|---|---|---|---|
+| POST | `/api/auth/register` | Registro de usuaria | `{nombre, escuela, email, password}` |
+| POST | `/api/auth/login` | Inicio de sesión | `{email, password, mantenerSesion}` |
+| POST | `/api/auth/logout` | Cierre de sesión | - |
+| GET | `/api/auth/me` | Datos de la sesión actual | - |
+| POST | `/api/planificaciones` | Crear planificación vía IA | `{consigna}` |
+| GET | `/api/planificaciones` | Listar historial | `?filtro=recientes\|efemerides\|proyectos` |
+| GET | `/api/planificaciones/:id` | Obtener planificación completa | - |
+| POST | `/api/planificaciones/:id/actividades` | Agregar una actividad | `{dia, semana, titulo, descripcion}` |
+| POST | `/api/planificaciones/:id/materiales` | Agregar un material | `{nombre, icono}` |
+| PATCH | `/api/planificaciones/:id` | Actualizar campos editados | `{path, value}` |
+| DELETE | `/api/planificaciones/:id/actividades/:actividadId` | Eliminar una actividad | - |
+| DELETE | `/api/planificaciones/:id/materiales/:materialId` | Eliminar un material | - |
+| DELETE | `/api/planificaciones/:id` | Eliminar planificación | - |
+| GET | `/api/datos-estaticos/efemerides` | Efemérides próximas | `?dias=7` |
+| GET | `/api/datos-estaticos/sugerencias` | Chips de sugerencia | - |
+| GET | `/api/health` | Health check | - |
+
+### Respuesta de Gemini — JSON Schema
+
+```typescript
+interface GeminiPlanificacionResponse {
+  titulo: string;
+  fechaInicio: string; // ISO date
+  fechaFin: string;
+  objetivos: string[]; // 2-4 items
+  areaCurricular: string;
+  ambitoExperiencia: string; // del Diseño Curricular SF
+  actividades: {
+    semana?: number; // entero >= 1; si falta, se asume 1
+    dia: 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes';
+    titulo: string;
+    descripcion: string;
+  }[];
+  materiales: {
+    nombre: string;
+    icono: string; // emoji
+  }[];
+  adaptaciones: {
+    categoria: string;
+    titulo: string;
+    descripcion: string;
+  }[];
+  fundamentacion: string;
+}
+```
 
 ## Testing
 
