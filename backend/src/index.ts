@@ -20,8 +20,11 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
-  console.log(`EduPlanner backend running on port ${PORT}`);
-});
+// Vercel invokes the exported app directly; only listen when running locally.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`EduPlanner backend running on port ${PORT}`);
+  });
+}
 
 export default app;
