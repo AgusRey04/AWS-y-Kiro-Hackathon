@@ -230,8 +230,8 @@ describe('HistoryPage', () => {
   it('muestra el header con título y subtítulo', async () => {
     renderHistoryPage();
 
-    expect(screen.getByText('Historial')).toBeInTheDocument();
-    expect(screen.getByText('Tus planificaciones anteriores')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mis Planificaciones' })).toBeInTheDocument();
+    expect(screen.getByText(/Revisá tus actividades pasadas/)).toBeInTheDocument();
   });
 
   it('deseleccionar un filtro activo vuelve a mostrar todos los planes', async () => {

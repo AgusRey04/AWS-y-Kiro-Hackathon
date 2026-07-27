@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function LeafIcon({ className }: { className?: string }) {
   return (
@@ -37,6 +37,8 @@ function HistoryIcon({ className }: { className?: string }) {
 
 export default function TopHeader() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const enHistorial = pathname.startsWith('/history');
 
   return (
     <header className="sticky top-0 z-20 bg-bg-cream/90 backdrop-blur-sm border-b border-border-light">
@@ -56,7 +58,11 @@ export default function TopHeader() {
         <button
           type="button"
           onClick={() => navigate('/history')}
-          className="w-10 h-10 flex items-center justify-center rounded-full text-text-muted transition-colors hover:bg-black/5 hover:text-green-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary"
+          className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary ${
+            enHistorial
+              ? 'bg-green-primary text-white shadow-sm'
+              : 'text-text-muted hover:bg-black/5 hover:text-green-primary'
+          }`}
           aria-label="Ver historial de planificaciones"
         >
           <HistoryIcon className="w-6 h-6" />
