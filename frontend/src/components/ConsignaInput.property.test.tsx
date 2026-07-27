@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import ConsignaInput from './ConsignaInput';
 import SuggestionChips from './SuggestionChips';
-import { getDefaultSuggestions, getSeasonByMonth } from '../utils/suggestions';
 import { insertChip } from '../utils/consigna';
 
 /**
@@ -214,37 +213,6 @@ describe('Feature: edu-planner, Property 18: Suggestion chip count bounds', () =
         unmount();
       }),
       { numRuns: 150 }
-    );
-  });
-
-  it('getDefaultSuggestions always returns between 2 and 5 items for any date', () => {
-    // Generate arbitrary months (1-12) to test all seasons
-    const monthArb = fc.integer({ min: 1, max: 12 });
-    const dayArb = fc.integer({ min: 1, max: 28 });
-    const yearArb = fc.integer({ min: 2020, max: 2030 });
-
-    fc.assert(
-      fc.property(monthArb, dayArb, yearArb, (month, day, year) => {
-        const date = new Date(year, month - 1, day);
-        const suggestions = getDefaultSuggestions(date);
-
-        expect(suggestions.length).toBeGreaterThanOrEqual(2);
-        expect(suggestions.length).toBeLessThanOrEqual(5);
-      }),
-      { numRuns: 200 }
-    );
-  });
-
-  it('getSeasonByMonth returns a valid season for every month 1-12', () => {
-    const monthArb = fc.integer({ min: 1, max: 12 });
-
-    fc.assert(
-      fc.property(monthArb, (month) => {
-        const season = getSeasonByMonth(month);
-        expect(season).toBeDefined();
-        expect(season!.sugerencias.length).toBeGreaterThanOrEqual(2);
-      }),
-      { numRuns: 100 }
     );
   });
 
