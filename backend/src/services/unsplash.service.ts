@@ -85,7 +85,7 @@ export async function buscarImagenUnsplash(titulo: string): Promise<string | nul
 
   try {
     const query = extraerKeywords(titulo);
-    const url = `${UNSPLASH_API_URL}?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`;
+    const url = `${UNSPLASH_API_URL}?query=${encodeURIComponent(query)}&per_page=10&orientation=landscape`;
 
     const response = await fetch(url, {
       headers: {
@@ -104,8 +104,11 @@ export async function buscarImagenUnsplash(titulo: string): Promise<string | nul
       return null;
     }
 
+    // Elegir una foto al azar entre los resultados para no repetir siempre la misma
+    const indiceAleatorio = Math.floor(Math.random() * data.results.length);
+
     // Usar tamaño "small" para las cards (eficiente en ancho de banda)
-    return data.results[0].urls.small;
+    return data.results[indiceAleatorio].urls.small;
   } catch (error) {
     console.warn('Error buscando imagen en Unsplash:', error);
     return null;
