@@ -42,6 +42,7 @@ export default function VoiceRecorder({
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transcriptRef = useRef('');
+  const finalTranscriptRef = useRef('');
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current) {
@@ -88,6 +89,7 @@ export default function VoiceRecorder({
 
     setNotification(null);
     transcriptRef.current = '';
+    finalTranscriptRef.current = '';
 
     const recognition = new SpeechRecognitionClass();
     recognition.lang = lang;
@@ -103,10 +105,13 @@ export default function VoiceRecorder({
       clearSilenceTimer();
       startSilenceTimer();
 
-      let finalTranscript = '';
+      let finalTranscript = finalTranscriptRef.current;
       let interimTranscript = '';
 
-      for (let i = 0; i < event.results.length; i++) {
+      // Procesar solo los resultados nuevos o modificados. En móviles,
+      // event.results también incluye segmentos anteriores y recorrerlos otra vez
+      // puede duplicar palabras ya confirmadas.
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
           finalTranscript += result[0].transcript;
@@ -115,6 +120,7 @@ export default function VoiceRecorder({
         }
       }
 
+      finalTranscriptRef.current = finalTranscript;
       const combined = finalTranscript + interimTranscript;
 
       // Check character limit
