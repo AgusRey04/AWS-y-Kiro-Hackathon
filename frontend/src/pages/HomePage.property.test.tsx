@@ -183,6 +183,9 @@ describe('Feature: edu-planner, Property 4: Consigna submission validation', () 
       fc.asyncProperty(blankConsignaArb, async (consigna) => {
         const { unmount } = renderHomePage();
 
+        // El modo por defecto es voz: pasamos a texto para validar el CTA CREAR
+        fireEvent.click(screen.getByRole('radio', { name: /texto/i }));
+
         if (consigna.length > 0) {
           const textarea = screen.getByLabelText('Consigna de planificación');
           fireEvent.change(textarea, { target: { value: consigna } });
@@ -202,6 +205,8 @@ describe('Feature: edu-planner, Property 4: Consigna submission validation', () 
 
   it('pressing CREAR with a valid consigna does invoke the backend (non-vacuity check)', async () => {
     renderHomePage();
+
+    fireEvent.click(screen.getByRole('radio', { name: /texto/i }));
 
     const textarea = screen.getByLabelText('Consigna de planificación');
     fireEvent.change(textarea, { target: { value: 'Trabajar las estaciones del año' } });
