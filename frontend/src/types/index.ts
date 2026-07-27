@@ -9,10 +9,6 @@ export type {
   VoiceError,
   VoiceState,
   Efemeride,
-  DatosEstaticos,
-  GeminiPlanificacionResponse,
   ApiErrorResponse,
   ApiSuccessResponse,
 } from '../../../shared/types';
-
-export { ApiErrorCode } from '../../../shared/types';
