@@ -126,9 +126,9 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-xs font-semibold text-text-dark font-quicksand">
               Contraseña
             </label>
-            <button type="button" className="text-xs text-mostaza font-medium font-quicksand hover:underline" tabIndex={-1}>
+            {/* <button type="button" className="text-xs text-mostaza font-medium font-quicksand hover:underline" tabIndex={-1}>
               ¿Olvidaste tu contraseña?
-            </button>
+            </button> */}
           </div>
           <div className="relative">
             <LockIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />

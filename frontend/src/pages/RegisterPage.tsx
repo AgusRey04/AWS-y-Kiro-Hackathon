@@ -272,11 +272,6 @@ export default function RegisterPage() {
         ✦ Diseñado para educadores/as infantiles
       </p>
 
-      <p className="text-center text-[10px] text-text-muted mt-4 font-quicksand">
-        Al registrarte, aceptás nuestros{' '}
-        <span className="underline">Términos de Servicio</span> y{' '}
-        <span className="underline">Política de Privacidad</span>
-      </p>
     </div>
   );
 }

@@ -50,7 +50,7 @@ export default function AuthLayout() {
         {/* Footer del panel */}
         {isLogin && (
           <p className="text-[11px] text-text-muted font-quicksand mt-8 text-center max-w-xs">
-            © 2025 EduPlanner. Herramientas diseñadas para educadores/as infantiles.
+            © 2026 EduPlanner. Herramientas diseñadas para educadores/as infantiles.
           </p>
         )}
       </div>
