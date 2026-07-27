@@ -4,16 +4,16 @@ import TopHeader from '../components/TopHeader';
 
 export default function AppLayout() {
   const { pathname } = useLocation();
-  // La vista de preview tiene su propio encabezado, evitamos duplicarlo
-  const showTopHeader = !pathname.startsWith('/preview');
+  // En el preview la barra inferior son las acciones de la planificación
+  const enPreview = pathname.startsWith('/preview');
 
   return (
     <div className="min-h-screen bg-bg-cream flex flex-col overflow-x-hidden">
-      {showTopHeader && <TopHeader />}
-      <main className="flex-1 pb-[84px]">
+      <TopHeader />
+      <main className={`flex-1 ${enPreview ? '' : 'pb-[84px]'}`}>
         <Outlet />
       </main>
-      <BottomNav />
+      {!enPreview && <BottomNav />}
     </div>
   );
 }

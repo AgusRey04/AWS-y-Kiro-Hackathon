@@ -181,7 +181,11 @@ export default function ActividadesTab({ actividades, planificacionId }: Activid
 
   return (
     <div>
-      <div className="space-y-4" role="list" aria-label="Actividades por semana y día">
+      <div
+        className="timeline-list space-y-4 pl-10"
+        role="list"
+        aria-label="Actividades por semana y día"
+      >
         {grupos.map((grupo) => (
           <DayCard
             key={`${grupo.semana}-${grupo.dia}`}
@@ -336,15 +340,15 @@ function DayCard({
 }: DayCardProps) {
   return (
     <article
-      className="bg-white rounded-xl shadow-sm border border-border-light p-4"
+      className="timeline-item relative bg-[#F7F6F2] rounded-xl rounded-l-md px-6 py-5"
       style={{ borderLeftWidth: '4px', borderLeftColor: color }}
       role="listitem"
       aria-label={etiqueta ?? `Actividades del ${dia}`}
     >
-      <h3 className="text-sm font-bold font-quicksand text-text-dark uppercase tracking-wide mb-2">
+      <h3 className="text-[12px] font-bold font-quicksand text-text-muted uppercase tracking-[0.14em] mb-2">
         {dia}
       </h3>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {actividades.map((actividad) => (
           <div key={actividad.id}>
             {planificacionId ? (
@@ -357,7 +361,7 @@ function DayCard({
                     type="title"
                     fieldPath={`actividades.${actividad.id}.titulo`}
                     planificacionId={planificacionId}
-                    className="text-sm font-quicksand text-text-dark"
+                    className="text-xl font-semibold font-quicksand text-text-dark leading-snug"
                     as="p"
                   />
                   <EditableBlock
@@ -367,7 +371,7 @@ function DayCard({
                     type="description"
                     fieldPath={`actividades.${actividad.id}.descripcion`}
                     planificacionId={planificacionId}
-                    className="text-sm font-quicksand text-text-muted mt-0.5"
+                    className="text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed"
                     as="p"
                   />
                 </div>
@@ -386,10 +390,10 @@ function DayCard({
               </div>
             ) : (
               <>
-                <p className="text-sm font-semibold font-quicksand text-text-dark">
+                <p className="text-xl font-semibold font-quicksand text-text-dark leading-snug">
                   {actividad.titulo}
                 </p>
-                <p className="text-sm font-quicksand text-text-muted mt-0.5">
+                <p className="text-[15px] font-quicksand text-text-muted mt-1.5 leading-relaxed">
                   {actividad.descripcion}
                 </p>
               </>
