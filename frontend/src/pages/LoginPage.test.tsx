@@ -18,6 +18,9 @@ function renderLoginPage() {
   );
 }
 
+function getEmail() { return screen.getByLabelText(/correo electrónico/i); }
+function getPassword() { return screen.getByLabelText('Contraseña'); }
+
 describe('LoginPage', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -29,10 +32,10 @@ describe('LoginPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /iniciar sesión/i })).toBeInTheDocument();
     });
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
+    expect(getEmail()).toBeInTheDocument();
+    expect(getPassword()).toBeInTheDocument();
     expect(screen.getByLabelText(/mantener sesión iniciada/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
   });
 
   it('shows validation errors when submitting empty form', async () => {
@@ -40,10 +43,10 @@ describe('LoginPage', () => {
     renderLoginPage();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(await screen.findByText('El email es obligatorio')).toBeInTheDocument();
     expect(screen.getByText('La contraseña es obligatoria')).toBeInTheDocument();
@@ -54,12 +57,12 @@ describe('LoginPage', () => {
     renderLoginPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(getEmail()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/email/i), 'maria@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), 'password123');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.type(getEmail(), 'maria@test.com');
+    await user.type(getPassword(), 'password123');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Home Page')).toBeInTheDocument();
@@ -71,12 +74,12 @@ describe('LoginPage', () => {
     renderLoginPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(getEmail()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/email/i), 'wrong@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), 'wrongpass');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.type(getEmail(), 'wrong@test.com');
+    await user.type(getPassword(), 'wrongpass');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(await screen.findByText('Credenciales inválidas')).toBeInTheDocument();
   });
@@ -86,13 +89,13 @@ describe('LoginPage', () => {
     renderLoginPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(getEmail()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/email/i), 'maria@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), 'password123');
+    await user.type(getEmail(), 'maria@test.com');
+    await user.type(getPassword(), 'password123');
     await user.click(screen.getByLabelText(/mantener sesión iniciada/i));
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(() => {
       expect(localStorage.getItem('token')).toBe('mock-jwt-token-123');
@@ -104,12 +107,12 @@ describe('LoginPage', () => {
     renderLoginPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(getEmail()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/email/i), 'maria@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), 'password123');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.type(getEmail(), 'maria@test.com');
+    await user.type(getPassword(), 'password123');
+    await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(() => {
       expect(sessionStorage.getItem('token')).toBe('mock-jwt-token-123');

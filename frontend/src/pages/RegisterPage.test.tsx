@@ -2,6 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
+import { server } from '../test/mocks/server';
 import { AuthProvider } from '../contexts/AuthContext';
 import RegisterPage from './RegisterPage';
 
@@ -12,12 +14,16 @@ function renderRegisterPage() {
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/home" element={<div>Home Page</div>} />
-          <Route path="/login" element={<div>Login Page</div>} />
         </Routes>
       </AuthProvider>
     </MemoryRouter>
   );
 }
+
+function getNombre() { return screen.getByLabelText(/nombre completo/i); }
+function getEscuela() { return screen.getByLabelText(/escuela o institución/i); }
+function getEmail() { return screen.getByLabelText(/correo electrónico/i); }
+function getPassword() { return screen.getByLabelText('Contraseña'); }
 
 describe('RegisterPage', () => {
   beforeEach(() => {
@@ -30,10 +36,10 @@ describe('RegisterPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /crear cuenta/i })).toBeInTheDocument();
     });
-    expect(screen.getByLabelText(/nombre/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/escuela/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
+    expect(getNombre()).toBeInTheDocument();
+    expect(getEscuela()).toBeInTheDocument();
+    expect(getEmail()).toBeInTheDocument();
+    expect(getPassword()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /registrarse/i })).toBeInTheDocument();
   });
 
@@ -58,13 +64,13 @@ describe('RegisterPage', () => {
     renderRegisterPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(getEmail()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/nombre/i), 'Ana');
-    await user.type(screen.getByLabelText(/escuela/i), 'Escuela 1');
-    await user.type(screen.getByLabelText(/email/i), 'invalid-email');
-    await user.type(screen.getByLabelText(/contraseña/i), 'pass123');
+    await user.type(getNombre(), 'Ana');
+    await user.type(getEscuela(), 'Escuela 1');
+    await user.type(getEmail(), 'invalid-email');
+    await user.type(getPassword(), 'pass123');
     await user.click(screen.getByRole('button', { name: /registrarse/i }));
 
     expect(await screen.findByText('El formato del email no es válido')).toBeInTheDocument();
@@ -75,13 +81,13 @@ describe('RegisterPage', () => {
     renderRegisterPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
+      expect(getPassword()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/nombre/i), 'Ana');
-    await user.type(screen.getByLabelText(/escuela/i), 'Escuela 1');
-    await user.type(screen.getByLabelText(/email/i), 'ana@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), '12345');
+    await user.type(getNombre(), 'Ana');
+    await user.type(getEscuela(), 'Escuela 1');
+    await user.type(getEmail(), 'ana@test.com');
+    await user.type(getPassword(), '12345');
     await user.click(screen.getByRole('button', { name: /registrarse/i }));
 
     expect(await screen.findByText('La contraseña debe tener al menos 6 caracteres')).toBeInTheDocument();
@@ -92,13 +98,13 @@ describe('RegisterPage', () => {
     renderRegisterPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/nombre/i)).toBeInTheDocument();
+      expect(getNombre()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/nombre/i), 'Ana López');
-    await user.type(screen.getByLabelText(/escuela/i), 'Escuela Nº 10');
-    await user.type(screen.getByLabelText(/email/i), 'ana@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), 'password123');
+    await user.type(getNombre(), 'Ana López');
+    await user.type(getEscuela(), 'Escuela Nº 10');
+    await user.type(getEmail(), 'ana@test.com');
+    await user.type(getPassword(), 'password123');
     await user.click(screen.getByRole('button', { name: /registrarse/i }));
 
     await waitFor(() => {
@@ -107,17 +113,26 @@ describe('RegisterPage', () => {
   });
 
   it('shows error when email is already taken (409)', async () => {
+    server.use(
+      http.post('/api/auth/register', () => {
+        return HttpResponse.json(
+          { code: 'CONFLICT', message: 'El email ya tiene una cuenta asociada' },
+          { status: 409 }
+        );
+      })
+    );
+
     const user = userEvent.setup();
     renderRegisterPage();
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/nombre/i)).toBeInTheDocument();
+      expect(getNombre()).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/nombre/i), 'Ana');
-    await user.type(screen.getByLabelText(/escuela/i), 'Escuela 1');
-    await user.type(screen.getByLabelText(/email/i), 'existing@test.com');
-    await user.type(screen.getByLabelText(/contraseña/i), 'password123');
+    await user.type(getNombre(), 'Ana');
+    await user.type(getEscuela(), 'Escuela 1');
+    await user.type(getEmail(), 'existing@test.com');
+    await user.type(getPassword(), 'password123');
     await user.click(screen.getByRole('button', { name: /registrarse/i }));
 
     expect(await screen.findByText('El email ya tiene una cuenta asociada')).toBeInTheDocument();
