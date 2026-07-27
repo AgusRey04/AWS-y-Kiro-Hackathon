@@ -274,16 +274,8 @@ function Footer() {
             <span className="text-lg font-bold font-quicksand text-green-primary">EduPlanner</span>
           </div>
           <p className="text-sm text-text-muted leading-relaxed">
-            © 2024 EduPlanner. Cultivando el futuro, un plan a la vez. Herramienta gratuita para la comunidad docente.
+            © 2026 EduPlanner. Cultivando el futuro, un plan a la vez. Herramienta gratuita para la comunidad docente.
           </p>
-          <div className="flex gap-3 mt-4">
-            <span className="w-9 h-9 rounded-full border border-border-light flex items-center justify-center text-text-muted">
-              <GlobeIcon className="w-4 h-4" />
-            </span>
-            <span className="w-9 h-9 rounded-full border border-border-light flex items-center justify-center text-text-muted">
-              <AtIcon className="w-4 h-4" />
-            </span>
-          </div>
         </div>
 
         {/* Explorar */}
@@ -299,8 +291,8 @@ function Footer() {
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-text-dark mb-3">Soporte</h4>
           <ul className="space-y-2 text-sm text-text-muted font-quicksand">
-            <li><a href="#cta" className="hover:text-green-primary transition-colors">Contacto</a></li>
-            <li><a href="#beneficios" className="hover:text-green-primary transition-colors">Blog</a></li>
+            <li><a href="mailto:reymundez.dev@gmail.com" className="hover:text-green-primary transition-colors">Contacto</a></li>
+            <li><a href="https://agustin-reymundez.vercel.app/" className="hover:text-green-primary transition-colors">Desarrollador</a></li>
           </ul>
         </div>
       </div>
