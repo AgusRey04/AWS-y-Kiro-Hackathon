@@ -8,6 +8,8 @@ interface VoiceRecorderProps {
   onTranscript: (text: string) => void;
   onPartialTranscript: (text: string) => void;
   onError: (error: VoiceError) => void;
+  /** Notifica al padre cuando empieza o termina la grabación. */
+  onRecordingChange?: (isRecording: boolean) => void;
   maxChars?: number;
   lang?: string;
 }
@@ -25,6 +27,7 @@ export default function VoiceRecorder({
   onTranscript,
   onPartialTranscript,
   onError,
+  onRecordingChange,
   maxChars = DEFAULT_MAX_CHARS,
   lang = 'es-AR',
 }: VoiceRecorderProps) {
@@ -210,6 +213,11 @@ export default function VoiceRecorder({
     }
   }, [state.isRecording, stopRecording, startRecording, onTranscript]);
 
+  // Informa al padre los cambios de estado de grabación
+  useEffect(() => {
+    onRecordingChange?.(state.isRecording);
+  }, [state.isRecording, onRecordingChange]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -230,24 +238,38 @@ export default function VoiceRecorder({
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <button
-        type="button"
-        onClick={handleToggle}
-        className={`min-h-[56px] min-w-[56px] rounded-full flex items-center justify-center transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 ${
-          state.isRecording
-            ? 'bg-red-500 text-white shadow-lg'
-            : 'bg-green-primary text-white hover:bg-green-dark'
-        }`}
-        aria-label={state.isRecording ? 'Detener grabación' : 'Iniciar grabación de voz'}
-        aria-pressed={state.isRecording}
-      >
-        {state.isRecording ? (
-          <StopIcon />
-        ) : (
-          <MicIcon />
-        )}
-      </button>
+    <div className="flex flex-col items-center gap-3">
+      {/* Botón circular de grabación con halo suave */}
+      <div className="relative flex items-center justify-center">
+        <span
+          aria-hidden="true"
+          className={`absolute w-52 h-52 rounded-full transition-colors ${
+            state.isRecording ? 'bg-red-400/10' : 'bg-mostaza/10'
+          }`}
+        />
+        <span
+          aria-hidden="true"
+          className={`absolute w-44 h-44 rounded-full transition-colors ${
+            state.isRecording ? 'bg-red-400/20 animate-pulse' : 'bg-mostaza/30'
+          }`}
+        />
+        <button
+          type="button"
+          onClick={handleToggle}
+          className={`relative w-36 h-36 rounded-full flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary focus-visible:ring-offset-2 ${
+            state.isRecording
+              ? 'bg-red-500 text-white shadow-[0_0_40px_10px_rgba(239,68,68,0.25)]'
+              : 'bg-mostaza text-text-dark shadow-[0_0_40px_10px_rgba(233,180,76,0.25)] hover:brightness-105'
+          }`}
+          aria-label={state.isRecording ? 'Detener grabación' : 'Iniciar grabación de voz'}
+          aria-pressed={state.isRecording}
+        >
+          {state.isRecording ? <StopIcon /> : <MicIcon />}
+          <span className="text-xs font-bold font-quicksand tracking-[0.18em] uppercase">
+            {state.isRecording ? 'Detener' : 'Grabar'}
+          </span>
+        </button>
+      </div>
 
       {/* Recording indicator with pulse animation */}
       {state.isRecording && (
@@ -292,7 +314,7 @@ function MicIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-6 w-6"
+      className="h-9 w-9"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -317,7 +339,7 @@ function StopIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-6 w-6"
+      className="h-9 w-9"
       fill="currentColor"
       viewBox="0 0 24 24"
       aria-hidden="true"

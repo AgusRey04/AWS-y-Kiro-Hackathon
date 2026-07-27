@@ -19,42 +19,67 @@ function ClockIcon({ className }: { className?: string }) {
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
-      fill="currentColor"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
       aria-hidden="true"
     >
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" />
+      <path d="M3 3v5h5" />
+      <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+      <path d="M12 7v5l4 2" />
     </svg>
   );
 }
 
-export default function BottomNav() {
-  const linkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-col items-center justify-center flex-1 py-2 text-xs font-medium font-quicksand transition-colors ${
-      isActive ? 'text-green-primary' : 'text-text-muted'
-    }`;
+interface NavItemProps {
+  to: string;
+  label: string;
+  end?: boolean;
+  icon: (props: { className?: string }) => React.ReactElement;
+}
 
+function NavItem({ to, label, end, icon: Icon }: NavItemProps) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex flex-col items-center justify-center flex-1 gap-1 text-xs font-semibold font-quicksand transition-colors ${
+          isActive ? 'text-green-primary' : 'text-text-muted'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span
+            className={`flex items-center justify-center w-11 h-11 rounded-full transition-all ${
+              isActive
+                ? 'bg-mostaza text-white shadow-md shadow-mostaza/40'
+                : 'bg-transparent text-text-muted'
+            }`}
+          >
+            <Icon className="w-5 h-5" />
+          </span>
+          <span>{label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+export default function BottomNav() {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-border-light flex min-h-[56px]"
+      className="fixed bottom-0 left-0 right-0 z-20 bg-[#F3F0E9] border-t border-border-light flex min-h-[56px] px-4 pt-2 pb-3"
       aria-label="Navegación principal"
     >
-      <NavLink to="/home" className={linkClasses} end>
-        {({ isActive }) => (
-          <>
-            <HouseIcon className={`w-6 h-6 ${isActive ? 'text-green-primary' : 'text-text-muted'}`} />
-            <span className="mt-1">Inicio</span>
-          </>
-        )}
-      </NavLink>
-      <NavLink to="/history" className={linkClasses}>
-        {({ isActive }) => (
-          <>
-            <ClockIcon className={`w-6 h-6 ${isActive ? 'text-green-primary' : 'text-text-muted'}`} />
-            <span className="mt-1">Historial</span>
-          </>
-        )}
-      </NavLink>
+      <div className="w-full flex">
+        <NavItem to="/home" label="Inicio" icon={HouseIcon} end />
+        <NavItem to="/history" label="Historial" icon={ClockIcon} />
+      </div>
     </nav>
   );
 }

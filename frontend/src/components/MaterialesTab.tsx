@@ -18,6 +18,44 @@ export function etiquetaEliminarMaterial(nombre: string | undefined): string {
   return limpio ? `Eliminar material: ${limpio}` : 'Eliminar material sin nombre';
 }
 
+/** Ícono de "+" en círculo para el bloque de agregar material. */
+function PlusCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
+  );
+}
+
+/** Ícono de carrito para el encabezado de la lista de recursos. */
+function CartIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 4h2l2.2 10.2a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.78L19.5 8H6" />
+      <circle cx="9.5" cy="19" r="1.4" />
+      <circle cx="16.5" cy="19" r="1.4" />
+    </svg>
+  );
+}
+
 /** Ícono de tacho de basura (SVG inline, mismo estilo que el de ActividadesTab). */
 function TrashIcon({ className }: { className?: string }) {
   return (
@@ -57,12 +95,13 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
   const agregarButton = planificacionId ? (
     <button
       onClick={() => setIsFormOpen(true)}
-      className="mt-4 w-full border-2 border-dashed border-green-primary/40 text-green-primary rounded-full px-6 py-3 min-h-[56px] font-quicksand text-sm font-medium hover:bg-green-primary/5 active:scale-95 transition-all"
+      className="mt-6 w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border-light rounded-2xl px-6 py-7 text-text-muted font-quicksand text-sm font-medium hover:border-green-primary/40 hover:text-green-primary hover:bg-green-primary/5 active:scale-[0.99] transition-all"
       aria-label="Agregar item personalizado"
       aria-haspopup="dialog"
       aria-expanded={isFormOpen}
     >
-      + Agregar item personalizado
+      <PlusCircleIcon className="w-7 h-7" />
+      <span>+ Agregar item personalizado</span>
     </button>
   ) : null;
 
@@ -87,11 +126,26 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
 
   return (
     <div>
-      <ul className="space-y-3" aria-label="Lista de materiales">
+      {/* Encabezado de la sección */}
+      <div className="flex items-start gap-3.5 mb-6">
+        <span className="shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-mostaza/70 text-white">
+          <CartIcon className="w-[22px] h-[22px]" />
+        </span>
+        <div>
+          <h3 className="text-xl font-semibold font-quicksand text-text-dark">
+            Lista de Recursos
+          </h3>
+          <p className="text-[15px] font-quicksand text-text-muted mt-0.5">
+            Prepará con antelación para asegurar el fluir de la semana.
+          </p>
+        </div>
+      </div>
+
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3" aria-label="Lista de materiales">
         {sorted.map((material) => (
           <li
             key={material.id}
-            className="bg-white rounded-xl shadow-sm border border-border-light p-4 flex items-center gap-3"
+            className="bg-[#F7F6F2] rounded-xl border border-border-light/60 px-5 py-4 flex items-center gap-3"
           >
             <span className="text-2xl flex-shrink-0" aria-hidden="true">
               {material.icono}
@@ -105,7 +159,7 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
                   type="title"
                   fieldPath={`materiales.${material.id}.nombre`}
                   planificacionId={planificacionId}
-                  className="text-sm font-medium font-quicksand text-text-dark flex-1"
+                  className="text-[15px] font-medium font-quicksand text-text-dark flex-1"
                   as="span"
                 />
                 <button
@@ -120,7 +174,7 @@ export default function MaterialesTab({ materiales, planificacionId }: Materiale
                 </button>
               </>
             ) : (
-              <span className="text-sm font-medium font-quicksand text-text-dark">
+              <span className="text-[15px] font-medium font-quicksand text-text-dark">
                 {material.nombre}
               </span>
             )}

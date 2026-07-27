@@ -28,6 +28,58 @@ function formatDateRange(fechaInicio: string, fechaFin: string): string {
   return `${dayStart} ${monthStart} - ${dayEnd} ${monthEnd} ${year}`;
 }
 
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+
+function TargetIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 12.5l2.5 2.5 4.5-5" />
+    </svg>
+  );
+}
+
 export default function PreviewHeader({
   titulo,
   fechaInicio,
@@ -36,31 +88,56 @@ export default function PreviewHeader({
   areaCurricular,
 }: PreviewHeaderProps) {
   return (
-    <header className="bg-green-primary text-white rounded-b-xl px-4 py-5">
-      <p className="text-xs font-medium tracking-wide uppercase opacity-80">
-        PLANIFICACIÓN SEMANAL · NIVEL INICIAL
-      </p>
-      <h1 className="text-xl font-bold font-quicksand mt-1">{titulo}</h1>
-      <p className="text-sm mt-1 opacity-90">
-        {formatDateRange(fechaInicio, fechaFin)}
-      </p>
+    <header className="bg-white rounded-2xl border border-border-light border-l-[8px] border-l-green-primary shadow-sm px-6 py-7 sm:px-9 sm:py-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+        <div className="min-w-0">
+          <h1 className="text-3xl sm:text-4xl font-bold font-quicksand text-text-dark break-words leading-tight">
+            {titulo}
+          </h1>
+          <p className="text-[13px] font-bold tracking-[0.14em] uppercase text-green-primary mt-2.5">
+            PLANIFICACIÓN SEMANAL · NIVEL INICIAL
+          </p>
+        </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <span className="inline-block bg-white/20 text-white text-xs font-medium rounded-full px-3 py-1">
-          {areaCurricular}
+        <span className="inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-[#D9F0DC] text-green-dark text-[15px] font-semibold font-quicksand px-4 py-2.5">
+          <CalendarIcon className="w-4 h-4" />
+          {formatDateRange(fechaInicio, fechaFin)}
         </span>
       </div>
 
-      {objetivos.length > 0 && (
-        <ul className="mt-3 space-y-1" aria-label="Objetivos">
-          {objetivos.map((obj, idx) => (
-            <li key={idx} className="text-sm opacity-90 flex items-start gap-1">
-              <span className="shrink-0 mt-0.5">•</span>
-              <span>{obj}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="mt-7 border-t border-border-light pt-7 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Objetivos pedagógicos */}
+        <div>
+          <p className="flex items-center gap-2 text-[13px] font-bold tracking-[0.14em] uppercase text-text-muted">
+            <TargetIcon className="w-[18px] h-[18px]" />
+            Objetivos pedagógicos
+          </p>
+
+          {objetivos.length > 0 && (
+            <ul className="mt-4 space-y-3" aria-label="Objetivos">
+              {objetivos.map((obj, idx) => (
+                <li
+                  key={idx}
+                  className="text-[15px] font-quicksand text-text-dark flex items-start gap-2.5 leading-relaxed"
+                >
+                  <CheckCircleIcon className="w-[18px] h-[18px] mt-0.5 shrink-0 text-green-primary" />
+                  <span>{obj}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Área curricular */}
+        <div className="rounded-xl bg-[#FDF3DF] px-5 py-4">
+          <p className="text-[13px] font-bold tracking-[0.14em] uppercase text-[#A67C1B]">
+            Área curricular
+          </p>
+          <p className="mt-2 text-[15px] font-quicksand italic text-text-dark leading-relaxed">
+            {areaCurricular}
+          </p>
+        </div>
+      </div>
     </header>
   );
 }

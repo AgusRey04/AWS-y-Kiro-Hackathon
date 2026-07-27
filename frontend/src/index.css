@@ -9,3 +9,39 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+/* Línea de tiempo de las tarjetas de actividades (Preview > Actividades).
+   El número se dibuja con un pseudo-elemento para no alterar el texto de la
+   tarjeta ni su estructura accesible. */
+.timeline-list {
+  counter-reset: dia-actividad;
+}
+
+.timeline-item {
+  counter-increment: dia-actividad;
+}
+
+.timeline-item::before {
+  content: counter(dia-actividad, decimal-leading-zero);
+  position: absolute;
+  left: -2.25rem;
+  top: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #B6B1A8;
+}
+
+.timeline-item::after {
+  content: '';
+  position: absolute;
+  left: -1.6rem;
+  top: 2rem;
+  bottom: -1rem;
+  width: 1px;
+  background-color: #E5E1DB;
+}
+
+.timeline-item:last-child::after {
+  display: none;
+}
