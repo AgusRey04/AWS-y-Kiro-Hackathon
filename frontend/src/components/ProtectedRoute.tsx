@@ -13,7 +13,7 @@ export default function ProtectedRoute() {
   }
 
   if (!state.isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

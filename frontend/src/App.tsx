@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { PlanProvider } from './contexts/PlanContext';
@@ -39,6 +39,9 @@ function App() {
                   <Route path="/history" element={<HistoryPage />} />
                 </Route>
               </Route>
+
+              {/* Catch-all: cualquier ruta no definida redirige a la landing */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </PlanProvider>
