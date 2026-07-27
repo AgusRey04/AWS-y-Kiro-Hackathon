@@ -4,6 +4,12 @@ import type { VoiceError, VoiceState } from '../types';
 const SILENCE_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_CHARS = 500;
 
+/** Detecta si el navegador está en un dispositivo móvil (Android/iOS). */
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 interface VoiceRecorderProps {
   onTranscript: (text: string) => void;
   onPartialTranscript: (text: string) => void;
@@ -43,6 +49,8 @@ export default function VoiceRecorder({
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transcriptRef = useRef('');
   const finalTranscriptRef = useRef('');
+  /** Número de resultados ya confirmados como isFinal para evitar re-procesarlos. */
+  const processedFinalCountRef = useRef(0);
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current) {
@@ -90,10 +98,15 @@ export default function VoiceRecorder({
     setNotification(null);
     transcriptRef.current = '';
     finalTranscriptRef.current = '';
+    processedFinalCountRef.current = 0;
 
     const recognition = new SpeechRecognitionClass();
     recognition.lang = lang;
-    recognition.continuous = true;
+    // En móviles desactivamos continuous porque Chrome Android tiene un bug
+    // que reinicia la sesión internamente y re-emite resultados, duplicando texto.
+    // En su lugar reiniciamos manualmente en onend.
+    const mobile = isMobileDevice();
+    recognition.continuous = !mobile;
     recognition.interimResults = true;
 
     recognition.onstart = () => {
@@ -105,23 +118,33 @@ export default function VoiceRecorder({
       clearSilenceTimer();
       startSilenceTimer();
 
-      let finalTranscript = finalTranscriptRef.current;
+      let finalTranscript = '';
       let interimTranscript = '';
+      let newFinalCount = 0;
 
-      // Procesar solo los resultados nuevos o modificados. En móviles,
-      // event.results también incluye segmentos anteriores y recorrerlos otra vez
-      // puede duplicar palabras ya confirmadas.
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Recorremos todos los resultados pero solo agregamos los finales que
+      // aún no procesamos. Esto evita la duplicación que ocurre en Chrome
+      // Android cuando el motor reinicia internamente la sesión y re-emite
+      // resultados previos con isFinal = true.
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          finalTranscript += result[0].transcript;
+          newFinalCount++;
+          if (newFinalCount > processedFinalCountRef.current) {
+            finalTranscript += result[0].transcript;
+          }
         } else {
           interimTranscript += result[0].transcript;
         }
       }
 
-      finalTranscriptRef.current = finalTranscript;
-      const combined = finalTranscript + interimTranscript;
+      // Acumular nuevos finales al texto confirmado previo
+      if (finalTranscript) {
+        finalTranscriptRef.current += finalTranscript;
+      }
+      processedFinalCountRef.current = newFinalCount;
+
+      const combined = finalTranscriptRef.current + interimTranscript;
 
       // Check character limit
       if (combined.length >= maxChars) {
@@ -183,8 +206,25 @@ export default function VoiceRecorder({
     };
 
     recognition.onend = () => {
-      // Only update state if we didn't already handle it
+      // En móvil sin continuous, el reconocimiento termina tras cada frase.
+      // Reiniciamos automáticamente si el usuario no detuvo la grabación.
       setState((prev) => {
+        if (prev.isRecording && mobile) {
+          // Resetear el contador de finales porque el nuevo session tendrá
+          // su propio array de resultados desde 0.
+          processedFinalCountRef.current = 0;
+          // Reiniciar el reconocimiento para simular modo continuo
+          try {
+            recognition.start();
+            startSilenceTimer();
+          } catch {
+            // Si falla el reinicio, cerrar normalmente
+            const transcript = transcriptRef.current;
+            if (transcript) onTranscript(transcript);
+            return { ...prev, isRecording: false };
+          }
+          return prev; // Mantener estado de grabación
+        }
         if (prev.isRecording) {
           const transcript = transcriptRef.current;
           if (transcript) {
