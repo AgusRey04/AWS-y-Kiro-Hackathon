@@ -13,7 +13,7 @@ describe('App', () => {
   it('renders landing page at root route', async () => {
     render(<App />);
     await waitFor(() => {
-      expect(screen.getByText('Planifica con amor, enseña con libertad')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /planifica con.*amor.*enseña con libertad/i })).toBeInTheDocument();
     });
   });
 });
@@ -30,7 +30,7 @@ describe('LandingPage', () => {
   it('renders hero title', () => {
     renderLandingPage();
     expect(
-      screen.getByRole('heading', { name: /planifica con amor, enseña con libertad/i })
+      screen.getByRole('heading', { name: /planifica con.*amor.*enseña con libertad/i })
     ).toBeInTheDocument();
   });
 
@@ -43,29 +43,32 @@ describe('LandingPage', () => {
 
   it('renders "Empezar Gratis" CTA button linking to /register', () => {
     renderLandingPage();
-    const ctaLink = screen.getByRole('link', { name: /empezar gratis/i });
-    expect(ctaLink).toBeInTheDocument();
-    expect(ctaLink).toHaveAttribute('href', '/register');
+    const links = screen.getAllByRole('link', { name: /empezar gratis/i });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    expect(links[0]).toHaveAttribute('href', '/register');
   });
 
   it('renders "Iniciar Sesión" button linking to /login', () => {
     renderLandingPage();
-    const loginLink = screen.getByRole('link', { name: /iniciar sesión/i });
-    expect(loginLink).toBeInTheDocument();
-    expect(loginLink).toHaveAttribute('href', '/login');
+    const links = screen.getAllByRole('link', { name: /iniciar sesión/i });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    expect(links[0]).toHaveAttribute('href', '/login');
   });
 
   it('has responsive layout with no horizontal overflow', () => {
     renderLandingPage();
-    const main = screen.getByRole('main');
-    expect(main).toHaveClass('min-h-screen');
-    expect(main).toHaveClass('flex');
-    expect(main).toHaveClass('flex-col');
-    expect(main).toHaveClass('overflow-x-hidden');
+    // El contenedor raíz tiene overflow-x-hidden y flex column
+    const wrapper = screen.getByRole('main').closest('.min-h-screen');
+    expect(wrapper).toBeInTheDocument();
+    expect(wrapper).toHaveClass('overflow-x-hidden');
+    expect(wrapper).toHaveClass('flex');
+    expect(wrapper).toHaveClass('flex-col');
   });
 
   it('renders mockup image area with accessible label', () => {
     renderLandingPage();
-    expect(screen.getByLabelText('Mockup de planificación semanal')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/mockup de la aplicación eduplanner/i)
+    ).toBeInTheDocument();
   });
 });
