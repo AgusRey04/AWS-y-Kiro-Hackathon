@@ -197,9 +197,13 @@ describe('construirPrompt', () => {
     expect(prompt).toContain('trabajar el otoño');
   });
 
-  it('debe incluir la estación correcta', () => {
-    const prompt = construirPrompt('test', new Date(2024, 6, 15)); // July = invierno
-    expect(prompt).toContain('invierno');
+  it('no debe incluir la estación del año en el prompt', () => {
+    const prompt = construirPrompt('test', new Date(2024, 6, 15)); // July
+    expect(prompt).not.toContain('invierno');
+    expect(prompt).not.toContain('verano');
+    expect(prompt).not.toContain('otoño');
+    expect(prompt).not.toContain('primavera');
+    expect(prompt).toContain('NO menciones la estación del año');
   });
 
   it('debe incluir efemérides cercanas si existen', () => {
