@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Brote/hoja estilizada de EduPlanner -->
+  <circle cx="16" cy="16" r="15" fill="#2D6B4F"/>
+  <path d="M16 6c-4 4-7 9-7 14 0 3.5 3.1 6 7 6s7-2.5 7-6c0-5-3-10-7-14z" fill="#4CAF50"/>
+  <path d="M16 6c2 4 3 9 3 14" stroke="#FBF9F5" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M16 12c-1.5 1.5-3 3.5-3.5 6" stroke="#FBF9F5" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <path d="M16 16c1.5 1.5 2.5 3 3 5" stroke="#FBF9F5" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+</svg>
